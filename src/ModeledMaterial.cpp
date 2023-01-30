@@ -6,9 +6,9 @@
 extern std::mt19937 gen;
 
 ModeledMaterial::ModeledMaterial()
-    : Material(3.0769e-9, 3.8462e-8)
 {
-
+    minConductance = 3.0769e-9;
+    maxConductance = 3.8462e-8;
     if (sigmaDtoD)
     {
         std::uniform_real_distribution<double> dis(0, sigmaDtoD);

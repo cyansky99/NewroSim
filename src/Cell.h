@@ -1,5 +1,6 @@
 #pragma once
 #include "Material.h"
+#include "Array.h"
 
 class Cell
 {
@@ -11,9 +12,5 @@ private:
 public:
     Cell(int x, int y, Material *material);
     void WriteCell(int numPulse, int intensity);
-    double ReadCell(double voltage, double readNoiseSigma);
-
-    void PrintCell();
-
-    //~Cell();
+    double ReadCell(double voltage, double wireResistivity, double accessResistance, double readNoiseSigma);
 };

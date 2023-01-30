@@ -16,8 +16,6 @@ int main()
     Material *p = &AgSi;
     Cell cell(0, 0, p);
 
-    cell.PrintCell();
-
     std::cout << "Hello, World!\n";
     return 0;
 };
