@@ -3,20 +3,20 @@
 
 extern std::mt19937 gen;
 
-Cell::Cell(int x, int y, Material *material)
-    : x(x), y(y), material(material)
+Cell::Cell(int x, int y, Material *material, Transistor *transistor)
+    : x(x), y(y), material(material), transistor(transistor)
 {
     conductance = material->RandomConductance();
 }
 
-void Cell::WriteCell(int numPulse, int intensity)
+void Cell::WriteCell(int numPulse)
 {
-    conductance = material->NewConductance(conductance, numPulse, intensity);
+    conductance = material->NewConductance(conductance, numPulse);
 }
 
-double Cell::ReadCell(double voltage, double wireResistivity, double accessResistance, double readNoiseSigma)
+double Cell::ReadCell(double voltage, double wireResistance, double readNoiseSigma)
 {
-    double current = voltage / (1 / conductance + wireResistivity * (x + y) + accessResistance);
+    double current = voltage / (1 / conductance + wireResistance * (x + y + 2) + transistor->getOnResistance());
     if (readNoiseSigma)
     {
         std::uniform_real_distribution<double> dis(0, readNoiseSigma);

@@ -5,10 +5,9 @@
 
 extern std::mt19937 gen;
 
-ModeledMaterial::ModeledMaterial()
+ModeledMaterial::ModeledMaterial(double minConductance, double maxConductance, int numLevelLTP, int numLevelLTD, double NLLTP, double NLLTD, double sigmaDtoD)
+    : Material(minConductance, maxConductance), numLevelLTP(numLevelLTP), numLevelLTD(numLevelLTD), NLLTP(NLLTP), NLLTD(NLLTD), sigmaDtoD(sigmaDtoD)
 {
-    minConductance = 3.0769e-9;
-    maxConductance = 3.8462e-8;
     if (sigmaDtoD)
     {
         std::uniform_real_distribution<double> dis(0, sigmaDtoD);
@@ -24,7 +23,7 @@ ModeledMaterial::ModeledMaterial()
     LTDB = (maxConductance - minConductance) / (1 - exp(-numLevelLTD / LTDA));
 }
 
-double ModeledMaterial::NewConductance(double conductance, int numPulse, int intensity)
+double ModeledMaterial::NewConductance(double conductance, int numPulse)
 {
     if (numPulse == 0)
         return conductance;

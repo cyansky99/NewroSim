@@ -104,4 +104,6 @@ void Data::ReadData()
         std::cout << "Cannot find testLabel.txt\n";
         exit(-1);
     }
+
+    std::cout << "Data Read Complete\n";
 };

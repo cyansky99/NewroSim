@@ -5,11 +5,11 @@
 class ModeledMaterial : public Material
 {
 private:
-    const static int numLevelLTP = 97;     // Number of conductance states during LTP
-    const static int numLevelLTD = 100;    // Number of conductance states during LTD
-    constexpr static double NLLTP = 2.4;   // Nonlinearity of LTP
-    constexpr static double NLLTD = -4.88; // Nonlinearity of LTD
-    constexpr static double sigmaDtoD = 0; // Device to device difference
+    const int numLevelLTP;  // Number of conductance states during LTP
+    const int numLevelLTD;  // Number of conductance states during LTD
+    const double NLLTP;     // Nonlinearity of LTP
+    const double NLLTD;     // Nonlinearity of LTD
+    const double sigmaDtoD; // Device to device difference
 
     double LTPA; // Constant A of LTP
     double LTPB; // Constant B of LTP
@@ -17,6 +17,6 @@ private:
     double LTDB; // Constant B of LTD
 
 public:
-    ModeledMaterial();
-    double NewConductance(double conductance, int numPulse, int intensity) override;
+    ModeledMaterial(double minConductance, double maxConductance, int numLevelLTP, int numLevelLTD, double NLLTP, double NLLTD, double sigmaDtoD);
+    double NewConductance(double conductance, int numPulse) override;
 };

@@ -3,10 +3,11 @@
 class Material
 {
 protected:
-    double minConductance;
-    double maxConductance;
+    double minConductance; // Minimum conductance
+    double maxConductance; // Maximum conductance
 
 public:
+    Material(double minConductance, double maxConductance);
     double RandomConductance();
-    virtual double NewConductance(double conductance, int numPulse, int intensity) = 0;
+    virtual double NewConductance(double conductance, int numPulse) = 0;
 };
