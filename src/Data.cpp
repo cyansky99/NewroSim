@@ -53,7 +53,7 @@ void Data::ReadData()
     }
     else
     {
-        std::cout << "Cannot find train.txt\n";
+        std::cout << "Cannot find train.txt" << std::endl;
         exit(-1);
     }
     /* Read test.txt*/
@@ -71,7 +71,7 @@ void Data::ReadData()
     }
     else
     {
-        std::cout << "Cannot find test.txt\n";
+        std::cout << "Cannot find test.txt" << std::endl;
         exit(-1);
     }
     /* Read trainLabel.txt */
@@ -86,7 +86,7 @@ void Data::ReadData()
     }
     else
     {
-        std::cout << "Cannot find trainLabel.txt\n";
+        std::cout << "Cannot find trainLabel.txt" << std::endl;
         exit(-1);
     }
     /* Read testLabel.txt */
@@ -101,9 +101,9 @@ void Data::ReadData()
     }
     else
     {
-        std::cout << "Cannot find testLabel.txt\n";
+        std::cout << "Cannot find testLabel.txt" << std::endl;
         exit(-1);
     }
 
-    std::cout << "Data Read Complete\n";
+    std::cout << "Data Read Complete" << std::endl;
 };

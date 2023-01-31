@@ -13,6 +13,8 @@ private:
 public:
     Array(int X, int Y, Wire *wire, Material *material, Transistor *transistor, double readNoise);
     Array(int X, int Y, Wire *wire, Material ***material, Transistor *transistor, double readNoise);
+    int GetX();
+    int GetY();
     void ReadArray(double *voltage, double *current);
     void ReadArrayBackwards(double *voltage, double *current);
     void WriteArray(int **numPulse);

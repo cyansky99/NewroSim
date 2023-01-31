@@ -6,6 +6,7 @@
 #include "Array.h"
 #include "Wire.h"
 #include "Transistor.h"
+#include "Network.h"
 
 std::random_device rd;
 std::mt19937 gen(rd());
@@ -19,7 +20,13 @@ int main()
     Wire wire(100, 2, 2.3, 2.73e-8);
     Transistor transistor(15e3);
 
-    Array array(100, 100, &wire, &AgSi, &transistor, 0.0);
+    Array array1(784, 256, &wire, &AgSi, &transistor, 0.0);
+    Array array2(256, 128, &wire, &AgSi, &transistor, 0.0);
+    Array array3(128, 10, &wire, &AgSi, &transistor, 0.0);
+
+    Array *a[3] = {&array1, &array2, &array3};
+
+    Network network(4, a);
 
     std::cout << "Hello, World!\n";
     return 0;

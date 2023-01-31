@@ -31,6 +31,16 @@ Array::Array(int X, int Y, Wire *wire, Material ***material, Transistor *transis
     }
 }
 
+int Array::GetX()
+{
+    return X;
+}
+
+int Array::GetY()
+{
+    return Y;
+}
+
 void Array::ReadArray(double *voltage, double *current)
 {
     for (int y = 0; y < Y; y++)
