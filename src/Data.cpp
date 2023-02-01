@@ -107,3 +107,23 @@ void Data::ReadData()
 
     std::cout << "Data Read Complete" << std::endl;
 };
+
+double **Data::GetTrainX()
+{
+    return trainX;
+}
+
+int *Data::GetTrainY()
+{
+    return trainY;
+}
+
+double **Data::GetTestX()
+{
+    return testX;
+}
+
+int *Data::GetTestY()
+{
+    return testY;
+}

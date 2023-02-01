@@ -14,6 +14,16 @@ Array::Array(int X, int Y, Wire *wire, Material *material, Transistor *transisto
             cell[x][y] = new Cell(x, y, material, transistor);
         }
     }
+
+    /* Make reference column */
+    refCol = new Cell *[X];
+    for (int x = 0; x < X; x++)
+        refCol[x] = new Cell(x, Y, transistor, (material->MinConductance() + material->MaxConductance()) / 2);
+
+    /* Make reference row */
+    refRow = new Cell *[Y];
+    for (int y = 0; y < Y; y++)
+        refRow[y] = new Cell(X, y, transistor, (material->MinConductance() + material->MaxConductance()) / 2);
 }
 
 Array::Array(int X, int Y, Wire *wire, Material ***material, Transistor *transistor, double readNoise)
@@ -68,6 +78,26 @@ void Array::ReadArrayBackwards(double *voltage, double *current)
     }
 }
 
+double Array::ReferenceColumn(double *voltage)
+{
+    double sumI = 0;
+    for (int x = 0; x < X; x++)
+    {
+        sumI += refCol[x]->ReadCell(voltage[x], wire->UnitResistance(), readNoise);
+    }
+    return sumI;
+}
+
+double Array::ReferenceRow(double *voltage)
+{
+    double sumI = 0;
+    for (int y = 0; y < Y; y++)
+    {
+        sumI += refRow[y]->ReadCell(voltage[y], wire->UnitResistance(), readNoise);
+    }
+    return sumI;
+}
+
 void Array::WriteArray(int **numPulse)
 {
     for (int x = 0; x < X; x++)
@@ -86,4 +116,9 @@ Array::~Array()
         delete[] cell[x];
     }
     delete[] cell;
+
+    for (int x = 0; x < X; x++)
+        delete refCol[x];
+    for (int y = 0; y < Y; y++)
+        delete refRow[y];
 }

@@ -9,5 +9,7 @@ protected:
 public:
     Material(double minConductance, double maxConductance);
     double RandomConductance();
+    double MinConductance();
+    double MaxConductance();
     virtual double NewConductance(double conductance, int numPulse) = 0;
 };

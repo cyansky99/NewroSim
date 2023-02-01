@@ -15,4 +15,8 @@ public:
     Data(int numTrain, int numTest, int inputSize);
     ~Data();
     void ReadData();
+    double **GetTrainX();
+    int *GetTrainY();
+    double **GetTestX();
+    int *GetTestY();
 };

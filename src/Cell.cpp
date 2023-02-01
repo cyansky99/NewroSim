@@ -9,6 +9,11 @@ Cell::Cell(int x, int y, Material *material, Transistor *transistor)
     conductance = material->RandomConductance();
 }
 
+Cell::Cell(int x, int y, Transistor *transistor, double conductance)
+    : x(x), y(y), transistor(transistor), conductance(conductance)
+{
+}
+
 void Cell::WriteCell(int numPulse)
 {
     conductance = material->NewConductance(conductance, numPulse);

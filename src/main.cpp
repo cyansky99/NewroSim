@@ -7,14 +7,16 @@
 #include "Wire.h"
 #include "Transistor.h"
 #include "Network.h"
+#include "ADCSigmoid.h"
+#include <cmath>
 
 std::random_device rd;
 std::mt19937 gen(rd());
 
 int main()
 {
-    // Data data(60000, 10000, 784);
-    // data.ReadData();
+    Data data(60000, 10000, 784);
+    data.ReadData();
 
     ModeledMaterial AgSi(3.0769e-9, 3.8462e-8, 97, 100, 2.4, -4.88, 0.0);
     Wire wire(100, 2, 2.3, 2.73e-8);
@@ -26,7 +28,11 @@ int main()
 
     Array *a[3] = {&array1, &array2, &array3};
 
-    Network network(4, a);
+    ADCSigmoid activation(4, 4);
+
+    Network network(4, a, &activation);
+
+    network.FF(data.GetTrainX()[0], 0.5, 1e7);
 
     std::cout << "Hello, World!\n";
     return 0;

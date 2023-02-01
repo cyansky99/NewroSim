@@ -12,6 +12,7 @@ private:
 
 public:
     Cell(int x, int y, Material *material, Transistor *transistor);
+    Cell(int x, int y, Transistor *transistor, double conductance);
     void WriteCell(int numPulse);
     double ReadCell(double voltage, double wireResistivity, double readNoiseSigma);
 };
