@@ -33,6 +33,7 @@ int main()
     Network network(4, a, &activation, 1e7, 0.5);
 
     network.FF(data.GetTrainX()[0]);
+    network.BP(data.GetTrainY()[0]);
 
     std::cout << "Hello, World!\n";
     return 0;

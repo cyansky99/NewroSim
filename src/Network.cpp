@@ -22,7 +22,7 @@ Network::Network(int layer, Array **array, Activation *activation, double ItoV, 
     dimension[layer - 1] = array[layer - 2]->GetY();
 
     /* Number of bits used in digital domain */
-    int numBits = activation->GetOuputBits();
+    numBits = activation->GetOuputBits();
 
     /* Mermory allocation for members */
     output = new int *[layer];
@@ -33,7 +33,7 @@ Network::Network(int layer, Array **array, Activation *activation, double ItoV, 
     error = new double *[layer - 1];
     for (int i = 0; i < layer - 1; i++)
     {
-        error[i] = new double[dimension[i + 1]];
+        error[i] = new double[dimension[layer - i - 1]];
     }
 }
 
@@ -64,7 +64,7 @@ void Network::FF(double *input)
             }
         }
 
-        /* Read array*/
+        /* Read array */
         double totalCurrent[dimension[l + 1]] = {};
         for (int t = 0; t < numBits; t++)
         {
@@ -84,9 +84,9 @@ void Network::FF(double *input)
         for (int m = 0; m < dimension[l + 1]; m++)
         {
             output[l + 1][m] = activation->Activate(totalCurrent[m] * ItoV);
-            printf("%d ", output[l + 1][m]);
+            // printf("%d ", output[l + 1][m]);
         }
-        printf("\n");
+        // printf("\n");
     }
 }
 
@@ -95,28 +95,49 @@ void Network::BP(int label)
     /* Substract target vector */
     for (int n = 0; n < dimension[layer - 1]; n++)
     {
-        error[0][n] = output[dimension[layer - 1]][n];
+        error[0][n] = output[layer - 1][n];
     }
-    error[0][label] = pow(2, numBits) - output[dimension[layer - 1]][label];
-
+    error[0][label] = pow(2, numBits) - output[layer - 1][label];
     /* Backpropagation */
-    for (int l = 1; l < layer - 1; l++)
+    // XXX: Cannot slice bit...
+    // l < layer - 1
+    for (int l = 1; l < 2; l++)
     {
         double **slicedBits = new double *[numBits];
         for (int t = 0; t < numBits; t++)
-            slicedBits[t] = new double[dimension[layer - l - 1]];
+            slicedBits[t] = new double[dimension[layer - l]];
 
         /* Bit slicing */
-        for (int m = 0; m < dimension[layer - 1 - 1]; m++)
+        for (int m = 0; m < dimension[layer - l]; m++)
         {
             for (int t = 0; t < numBits; t++)
             {
-                if ((output[l][m] >> t) & 1)
+                if ((static_cast<int>(error[l - 1][m]) >> t) & 1)
                     slicedBits[t][m] = readVoltage;
                 else
                     slicedBits[t][m] = 0;
             }
         }
+
+        /* Read array backwaards */
+        double totalCurrent[dimension[layer - l - 1]] = {};
+        for (int t = 0; t < numBits; t++)
+        {
+            /* Divide previous total in half */
+            for (int n = 0; n < dimension[layer - l - 1]; n++)
+                totalCurrent[n] /= 2;
+
+            /* Add new current to total */
+            double sumI[dimension[layer - l]];
+            double sumRefI = array[layer - l - 1]->ReferenceColumn(slicedBits[t]); // Reference column current
+            array[layer - l - 1]->ReadArrayBackwards(slicedBits[t], sumI);
+            for (int n = 0; n < dimension[layer - l - 1]; n++)
+                totalCurrent[n] += (sumI[n] - sumRefI);
+        }
+
+        for (int n = 0; n < dimension[layer - l - 1]; n++)
+            printf("%lf ", totalCurrent[n] * ItoV);
+        printf("\n");
     }
 }
 
