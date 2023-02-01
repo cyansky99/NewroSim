@@ -32,7 +32,7 @@ int ADCSigmoid::Activate(double input)
             return MSB * numIntervalLSB + LSB;
         }
     }
-    return numIntervalLSB * numIntervalMSB; // Return maximum
+    return numIntervalLSB * numIntervalMSB - 1; // Return maximum
 }
 
 ADCSigmoid::~ADCSigmoid()

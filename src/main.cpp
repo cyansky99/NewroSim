@@ -30,9 +30,9 @@ int main()
 
     ADCSigmoid activation(4, 4);
 
-    Network network(4, a, &activation);
+    Network network(4, a, &activation, 1e7, 0.5);
 
-    network.FF(data.GetTrainX()[0], 0.5, 1e7);
+    network.FF(data.GetTrainX()[0]);
 
     std::cout << "Hello, World!\n";
     return 0;

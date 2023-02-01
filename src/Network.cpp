@@ -2,7 +2,8 @@
 #include <iostream>
 #include <cmath>
 
-Network::Network(int layer, Array **array, Activation *activation) : layer(layer), array(array), activation(activation)
+Network::Network(int layer, Array **array, Activation *activation, double ItoV, double readVoltage)
+    : layer(layer), array(array), activation(activation), ItoV(ItoV), readVoltage(readVoltage)
 {
     /* Checking if the sizes of arrays are compatible */
     for (int i = 0; i < layer - 2; i++)
@@ -20,6 +21,9 @@ Network::Network(int layer, Array **array, Activation *activation) : layer(layer
         dimension[i] = array[i]->GetX();
     dimension[layer - 1] = array[layer - 2]->GetY();
 
+    /* Number of bits used in digital domain */
+    int numBits = activation->GetOuputBits();
+
     /* Mermory allocation for members */
     output = new int *[layer];
     for (int i = 0; i < layer; i++)
@@ -33,10 +37,8 @@ Network::Network(int layer, Array **array, Activation *activation) : layer(layer
     }
 }
 
-void Network::FF(double *input, double readVoltage, double ItoV)
+void Network::FF(double *input)
 {
-    int numBits = activation->GetOuputBits();
-
     /* Digitalizing input vector */
     for (int n = 0; n < dimension[0]; n++)
     {
@@ -85,6 +87,36 @@ void Network::FF(double *input, double readVoltage, double ItoV)
             printf("%d ", output[l + 1][m]);
         }
         printf("\n");
+    }
+}
+
+void Network::BP(int label)
+{
+    /* Substract target vector */
+    for (int n = 0; n < dimension[layer - 1]; n++)
+    {
+        error[0][n] = output[dimension[layer - 1]][n];
+    }
+    error[0][label] = pow(2, numBits) - output[dimension[layer - 1]][label];
+
+    /* Backpropagation */
+    for (int l = 1; l < layer - 1; l++)
+    {
+        double **slicedBits = new double *[numBits];
+        for (int t = 0; t < numBits; t++)
+            slicedBits[t] = new double[dimension[layer - l - 1]];
+
+        /* Bit slicing */
+        for (int m = 0; m < dimension[layer - 1 - 1]; m++)
+        {
+            for (int t = 0; t < numBits; t++)
+            {
+                if ((output[l][m] >> t) & 1)
+                    slicedBits[t][m] = readVoltage;
+                else
+                    slicedBits[t][m] = 0;
+            }
+        }
     }
 }
 
