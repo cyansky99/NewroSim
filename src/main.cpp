@@ -32,12 +32,13 @@ int main()
 
     Network network(4, a, &activation, 1e7, 0.5);
 
+    double learningRate[3] = {0.1, 0.1, 0.1};
+
     std::cout << "Train Start" << std::endl;
     for (int i = 0; i < 1000; i++)
     {
         network.FF(data.GetTrainX()[i]);
         network.BP(data.GetTrainY()[i]);
-        double learningRate[3] = {0.1, 0.1, 0.1};
         network.WeightUpdate(learningRate, 400, 97, 100);
     }
 
@@ -47,7 +48,14 @@ int main()
     {
         network.FF(data.GetTestX()[j]);
         if (network.Test(data.GetTestY()[j]))
+        {
             cnt++;
+            printf("Correct\n");
+        }
+        else
+        {
+            printf("Wrong\n");
+        }
     }
     std::cout << static_cast<double>(cnt) / 100 << " %" << std::endl;
 

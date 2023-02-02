@@ -266,12 +266,16 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
                     if (negativeOuput[n] ^ negativeError[m]) // LTP (negative gradient, weight increase)
                     {
                         if (outputPulseStream[n][t] & errorPulseStream[m][t])
-                            numPulse[n][m]++;
+                        {
+                            printf("+");
+                        }
                     }
                     else // LTD (positive gradient, weight decrease)
                     {
                         if (outputPulseStream[n][t + streamLength] & errorPulseStream[m][t + streamLength])
-                            numPulse[n][m]--;
+                        {
+                            printf("-");
+                        }
                     }
                 }
             }
@@ -295,11 +299,18 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
 
 bool Network::Test(int label)
 {
+    printf("%d :", label);
     for (int i = 0; i < dimension[layer - 1]; i++)
     {
-        if (output[layer - 1][i] > output[layer - 1][label])
+        printf(" %d", output[layer - 1][i]);
+
+        if (output[layer - 1][i] >= output[layer - 1][label] && i != label)
+        {
+            printf("\n");
             return false;
+        }
     }
+    printf("\n");
     return true;
 }
 
