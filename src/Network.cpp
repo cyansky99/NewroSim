@@ -172,6 +172,10 @@ void Network::BP(int label)
     }
 }
 
+void Network::WeightUpdate(double learningRate, int streamLength)
+{
+}
+
 Network::~Network()
 {
     delete[] dimension;

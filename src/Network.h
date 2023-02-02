@@ -19,6 +19,6 @@ public:
     Network(int layer, Array **array, Activation *activation, double ItoV, double readVoltage);
     void FF(double *input);
     void BP(int label);
-    void WeightUpdate(double learningRate);
+    void WeightUpdate(double learningRate, int streamLength);
     ~Network();
 };
