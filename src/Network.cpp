@@ -48,6 +48,8 @@ void Network::FF(double *input)
     /* Feedforward */
     for (int l = 0; l < layer - 1; l++)
     {
+        /* n = dimension[l] neurons to m = dimension[l + 1] neurons */
+
         double **slicedBits = new double *[numBits];
         for (int t = 0; t < numBits; t++)
             slicedBits[t] = new double[dimension[l]];
@@ -77,32 +79,48 @@ void Network::FF(double *input)
             double sumRefI = array[l]->ReferenceColumn(slicedBits[t]); // Reference column current
             array[l]->ReadArray(slicedBits[t], sumI);
             for (int m = 0; m < dimension[l + 1]; m++)
-                totalCurrent[m] += (sumI[m] - sumRefI);
+                totalCurrent[m] += (sumI[m] - sumRefI); // Subtract reference column current (medium conductance) to make negative weight
         }
 
         /* Activate */
         for (int m = 0; m < dimension[l + 1]; m++)
-        {
             output[l + 1][m] = activation->Activate(totalCurrent[m] * ItoV);
-            // printf("%d ", output[l + 1][m]);
-        }
-        // printf("\n");
     }
 }
 
 void Network::BP(int label)
 {
-    /* Substract target vector */
-    for (int n = 0; n < dimension[layer - 1]; n++)
+    /* Generate first error vector */
     {
-        error[0][n] = output[layer - 1][n];
+        /* Substract target vector */
+        int delta[dimension[layer - 1]] = {}; // Difference between target and network output
+        for (int m = 0; m < dimension[layer - 1]; m++)
+        {
+            delta[m] = output[layer - 1][m];
+        }
+        delta[label] = output[layer - 1][label] - (pow(2, numBits) - 1);
+
+        /* Hadamard product with differential coefficient vector */
+        for (int m = 0; m < dimension[layer - 1]; m++)
+        {
+            error[0][m] = delta[m] * activation->Derivative(output[layer - 1][m]); // Digital multiplicatoin (FP operation)
+        }
     }
-    error[0][label] = pow(2, numBits) - output[layer - 1][label];
+
+    double normFactor = 1 / activation->GetMaxDiff(); // Facotr used to normalize error vector to 1
+    double maxWeight = array[0]->GetMaxWeight();      // XXX: Assume all arrays have same maximum weighit (same conductance range)
+
     /* Backpropagation */
-    // XXX: Cannot slice bit...
-    // l < layer - 1
-    for (int l = 1; l < 2; l++)
+    for (int l = 1; l < layer - 1; l++)
     {
+        /* m = dimension[layer - l] neurons to n = dimension[layer - l - 1] neurons */
+        double outputVoltageRange = dimension[layer - l] * maxWeight * ItoV * (readVoltage * 2); // Maximum intensity of output voltage
+
+        /* Normalize error vector */
+        int normError[dimension[layer - l]]; // Normalized error vector
+        for (int m = 0; m < dimension[layer - l]; m++)
+            normError[m] = static_cast<int>(error[l - 1][m] * normFactor * pow(2, numBits));
+
         double **slicedBits = new double *[numBits];
         for (int t = 0; t < numBits; t++)
             slicedBits[t] = new double[dimension[layer - l]];
@@ -112,7 +130,7 @@ void Network::BP(int label)
         {
             for (int t = 0; t < numBits; t++)
             {
-                if ((static_cast<int>(error[l - 1][m]) >> t) & 1)
+                if ((normError[m] >> t) & 1)
                     slicedBits[t][m] = readVoltage;
                 else
                     slicedBits[t][m] = 0;
@@ -129,15 +147,28 @@ void Network::BP(int label)
 
             /* Add new current to total */
             double sumI[dimension[layer - l]];
-            double sumRefI = array[layer - l - 1]->ReferenceColumn(slicedBits[t]); // Reference column current
+            double sumRefI = array[layer - l - 1]->ReferenceRow(slicedBits[t]); // Reference row current
             array[layer - l - 1]->ReadArrayBackwards(slicedBits[t], sumI);
             for (int n = 0; n < dimension[layer - l - 1]; n++)
                 totalCurrent[n] += (sumI[n] - sumRefI);
         }
 
+        /* Read voltage with linear ramp ADC */
+        double outputVoltage[dimension[layer - l - 1]];
         for (int n = 0; n < dimension[layer - l - 1]; n++)
-            printf("%lf ", totalCurrent[n] * ItoV);
-        printf("\n");
+        {
+            int step = static_cast<int>(totalCurrent[n] * ItoV / (outputVoltageRange / pow(2, numBits)));
+            if (totalCurrent[n] < 0)
+                step--; // Because reference ramp voltage increases from negative value
+            outputVoltage[n] = step * (outputVoltageRange / pow(2, numBits));
+        }
+
+        /* Hadamard product with differential coefficient vector & divide with normalization factor */
+        for (int n = 0; n < dimension[layer - l - 1]; n++)
+            error[l][n] = outputVoltage[n] * activation->Derivative(output[layer - l - 1][n]) / normFactor;
+
+        /* Next normalization factor */
+        normFactor *= 1 / outputVoltageRange / activation->GetMaxDiff();
     }
 }
 

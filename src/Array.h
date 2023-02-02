@@ -11,6 +11,7 @@ private:
     const double readNoise; // Read noise sigma
     Cell **refCol;          // Reference column cells
     Cell **refRow;          // Reference row cells
+    double maxWeight;       // Maximum weight ( |weight| < maxWeight )
 
 public:
     Array(int X, int Y, Wire *wire, Material *material, Transistor *transistor, double readNoise);
@@ -22,5 +23,6 @@ public:
     double ReferenceColumn(double *voltage);
     double ReferenceRow(double *voltage);
     void WriteArray(int **numPulse);
+    double GetMaxWeight();
     ~Array();
 };

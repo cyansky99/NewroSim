@@ -24,6 +24,9 @@ Array::Array(int X, int Y, Wire *wire, Material *material, Transistor *transisto
     refRow = new Cell *[Y];
     for (int y = 0; y < Y; y++)
         refRow[y] = new Cell(X, y, transistor, (material->MinConductance() + material->MaxConductance()) / 2);
+
+    /* Get maximum weight */
+    maxWeight = (material->MaxConductance() - material->MinConductance()) / 2;
 }
 
 Array::Array(int X, int Y, Wire *wire, Material ***material, Transistor *transistor, double readNoise)
@@ -105,6 +108,11 @@ void Array::WriteArray(int **numPulse)
         for (int y = 0; y < Y; y++)
             cell[x][y]->WriteCell(numPulse[x][y]);
     }
+}
+
+double Array::GetMaxWeight()
+{
+    return maxWeight;
 }
 
 Array::~Array()

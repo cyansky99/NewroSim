@@ -8,6 +8,7 @@ Material::Material(double minConductance, double maxConductance)
 {
 }
 
+// TODO: ramdomization method
 double Material::RandomConductance()
 {
     std::uniform_real_distribution<double> dis(0.0, 1.0);

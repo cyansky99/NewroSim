@@ -35,6 +35,17 @@ int ADCSigmoid::Activate(double input)
     return numIntervalLSB * numIntervalMSB - 1; // Return maximum
 }
 
+double ADCSigmoid::Derivative(int output)
+{
+    double normalizedValue = static_cast<double>(output) / (numIntervalLSB * numIntervalMSB);
+    return normalizedValue * (1 - normalizedValue);
+}
+
+double ADCSigmoid::GetMaxDiff()
+{
+    return 1.0 / 4;
+}
+
 ADCSigmoid::~ADCSigmoid()
 {
     delete[] lookup;
