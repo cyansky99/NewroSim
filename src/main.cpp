@@ -33,34 +33,23 @@ int main()
     Network network(4, a, &activation, 1e7, 0.5);
 
     std::cout << "Train Start" << std::endl;
-    std::cout << "[";
-    for (int i = 0; i < 10000; i++)
+    for (int i = 0; i < 1000; i++)
     {
         network.FF(data.GetTrainX()[i]);
         network.BP(data.GetTrainY()[i]);
         double learningRate[3] = {0.1, 0.1, 0.1};
         network.WeightUpdate(learningRate, 400, 97, 100);
-        if (i % 1000)
-            std::cout << "-";
     }
-    std::cout << "]" << std::endl;
 
     std::cout << "Test Start" << std::endl;
-    std::cout << "[";
     int cnt = 0;
     for (int j = 0; j < 10000; j++)
     {
-
         network.FF(data.GetTestX()[j]);
         if (network.Test(data.GetTestY()[j]))
             cnt++;
-        std::cout << std::endl;
-        if (j % 1000)
-            std::cout << "-";
     }
-    std::cout << "]" << std::endl;
     std::cout << static_cast<double>(cnt) / 100 << " %" << std::endl;
 
-    std::cout << "Hello, World!\n";
     return 0;
 };
