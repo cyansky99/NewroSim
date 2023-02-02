@@ -1,6 +1,9 @@
 #include "Network.h"
 #include <iostream>
 #include <cmath>
+#include <random>
+
+extern std::mt19937 gen;
 
 Network::Network(int layer, Array **array, Activation *activation, double ItoV, double readVoltage)
     : layer(layer), array(array), activation(activation), ItoV(ItoV), readVoltage(readVoltage)
@@ -42,7 +45,7 @@ void Network::FF(double *input)
     /* Digitalizing input vector */
     for (int n = 0; n < dimension[0]; n++)
     {
-        output[0][n] = static_cast<int>(input[n] * pow(2, numBits));
+        output[0][n] = static_cast<int>(input[n] * (pow(2, numBits) - 1));
     }
 
     /* Feedforward */
@@ -172,8 +175,132 @@ void Network::BP(int label)
     }
 }
 
-void Network::WeightUpdate(double learningRate, int streamLength)
+void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelLTP, int numLevelLTD)
 {
+    double maxWeight = array[0]->GetMaxWeight(); // XXX: Assume all arrays have same maximum weighit (same conductance range)
+
+    for (int l = 0; l < layer - 1; l++)
+    {
+        /* Update weights between layer l and layer l + 1 (array[l]) */
+        /* output[l][n] x error[layer - l - 2][m] */
+
+        /* Parallel weight update with coincidence of randomly generated pulses */
+
+        /* Memory allocation and initialization */
+        int **numPulse = new int *[dimension[l]]; // Number of coincident pusles
+        for (int n = 0; n < dimension[l]; n++)
+        {
+            numPulse[n] = new int[dimension[l + 1]];
+            for (int m = 0; m < dimension[l + 1]; m++)
+                numPulse[n][m] = 0;
+        }
+
+        /* output/error to probability constant */
+        double CLTP = sqrt(learningRate[l] * numLevelLTP / (streamLength * 2 * maxWeight));
+        double CLTD = sqrt(learningRate[l] * numLevelLTD / (streamLength * 2 * maxWeight));
+
+        /* Generating probabilistic pulse stream of output */
+        bool **outputPulseStream = new bool *[dimension[l]];
+        bool negativeOuput[dimension[l + 1]] = {};
+        if (activation->CanBeNegative())
+        {
+            for (int n = 0; n < dimension[l]; n++)
+            {
+                if (output[l][n] < 0)
+                    negativeOuput[n] = 1;
+            }
+        }
+        for (int n = 0; n < dimension[l]; n++)
+        {
+            outputPulseStream[n] = new bool[streamLength * 2]; // Generate pulse stream twice for positive/negative weight update
+
+            double pLTP = abs(output[l][n] / pow(2, numBits) * CLTP); // Pulse probability for LTP
+            double pLTD = abs(output[l][n] / pow(2, numBits) * CLTD); // Pulse probability for LTD
+
+            for (int t = 0; t < streamLength; t++) // First half is for LTP
+            {
+                std::bernoulli_distribution dis(pLTP);
+                outputPulseStream[n][t] = dis(gen);
+            }
+            for (int t = streamLength; t < streamLength * 2; t++) // Second half is for LTD
+            {
+                std::bernoulli_distribution dis(pLTD);
+                outputPulseStream[n][t] = dis(gen);
+            }
+        }
+
+        /* Generating probabilistic pulse stream of error */
+        bool **errorPulseStream = new bool *[dimension[l + 1]];
+        bool negativeError[dimension[l + 1]] = {};
+        for (int m = 0; m < dimension[l + 1]; m++)
+        {
+            if (error[layer - l - 2][m] < 0)
+                negativeError[m] = 1;
+        }
+        for (int m = 0; m < dimension[l + 1]; m++)
+        {
+            errorPulseStream[m] = new bool[streamLength * 2]; // Generate pulse stream twice for positive/negative weight update
+
+            double pLTP = abs(error[layer - l - 2][m] / pow(2, numBits) * CLTP); // Pulse probability for LTP
+            double pLTD = abs(error[layer - l - 2][m] / pow(2, numBits) * CLTD); // Pulse probability for LTD
+
+            for (int t = 0; t < streamLength; t++) // First half is for LTP
+            {
+                std::bernoulli_distribution dis(pLTP);
+                errorPulseStream[m][t] = dis(gen);
+            }
+            for (int t = streamLength; t < streamLength * 2; t++) // Second half is for LTD
+            {
+                std::bernoulli_distribution dis(pLTD);
+                errorPulseStream[m][t] = dis(gen);
+            }
+        }
+
+        /* Count coincident pulses */
+        for (int t = 0; t < streamLength; t++)
+        {
+            for (int n = 0; n < dimension[l]; n++)
+            {
+                for (int m = 0; m < dimension[l + 1]; m++)
+                {
+                    if (negativeOuput[n] ^ negativeError[m]) // LTP (negative gradient, weight increase)
+                    {
+                        if (outputPulseStream[n][t] & errorPulseStream[m][t])
+                            numPulse[n][m]++;
+                    }
+                    else // LTD (positive gradient, weight decrease)
+                    {
+                        if (outputPulseStream[n][t + streamLength] & errorPulseStream[m][t + streamLength])
+                            numPulse[n][m]--;
+                    }
+                }
+            }
+        }
+
+        /* Weight update with WriteArray */
+        array[l]->WriteArray(numPulse);
+
+        /* Delete memory allocaion */
+        for (int n = 0; n < dimension[l]; n++)
+            delete[] numPulse[n];
+        delete[] numPulse;
+        for (int n = 0; n < dimension[l]; n++)
+            delete[] outputPulseStream[n];
+        delete[] outputPulseStream;
+        for (int m = 0; m < dimension[l + 1]; m++)
+            delete[] errorPulseStream[m];
+        delete[] errorPulseStream;
+    }
+}
+
+bool Network::Test(int label)
+{
+    for (int i = 0; i < dimension[layer - 1]; i++)
+    {
+        if (output[layer - 1][i] > output[layer - 1][label])
+            return false;
+    }
+    return true;
 }
 
 Network::~Network()

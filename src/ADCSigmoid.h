@@ -15,5 +15,6 @@ public:
     int Activate(double input) override;
     double Derivative(int ouptut) override;
     double GetMaxDiff() override;
+    bool CanBeNegative() override;
     ~ADCSigmoid();
 };

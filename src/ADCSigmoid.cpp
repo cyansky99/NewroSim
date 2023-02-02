@@ -46,6 +46,11 @@ double ADCSigmoid::GetMaxDiff()
     return 1.0 / 4;
 }
 
+bool ADCSigmoid::CanBeNegative()
+{
+    return false;
+}
+
 ADCSigmoid::~ADCSigmoid()
 {
     delete[] lookup;
