@@ -1,5 +1,6 @@
 #include "Array.h"
 #include "Cell.h"
+#include <iostream>
 
 Array::Array(int X, int Y, Wire *wire, Material *material, Transistor *transistor, double readNoise)
     : X(X), Y(Y), wire(wire), readNoise(readNoise)
@@ -56,6 +57,7 @@ int Array::GetY()
 
 void Array::ReadArray(double *voltage, double *current)
 {
+#pragma omp parallel for
     for (int y = 0; y < Y; y++)
     {
         double sumI = 0;
@@ -70,6 +72,7 @@ void Array::ReadArray(double *voltage, double *current)
 void Array::ReadArrayBackwards(double *voltage, double *current)
 
 {
+#pragma omp parallel for
     for (int x = 0; x < X; x++)
     {
         double sumI = 0;
@@ -129,4 +132,17 @@ Array::~Array()
         delete refCol[x];
     for (int y = 0; y < Y; y++)
         delete refRow[y];
+}
+
+void Array::PrintArray(double scale) // TODO: delete after debugging
+{
+    for (int x = X - 1; x >= 0; x--)
+    {
+        for (int y = 0; y < Y; y++)
+        {
+            cell[x][y]->PrintCell(scale);
+            printf(" ");
+        }
+        printf("\n");
+    }
 }

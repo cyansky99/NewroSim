@@ -21,5 +21,6 @@ public:
     void BP(int label);
     void WeightUpdate(double *learningRate, int streamLength, int numLevelLTP, int numLevelLTD);
     bool Test(int label);
+    void SnapShot(int i); // TODO: delete after debugging
     ~Network();
 };

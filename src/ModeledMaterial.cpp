@@ -30,11 +30,21 @@ double ModeledMaterial::NewConductance(double conductance, int numPulse)
     else if (numPulse > 0) // LTP
     {
         int xPulse = -LTPA * log(1 - (conductance - minConductance) / LTPB);
-        return LTPB * (1 - exp(-(xPulse + numPulse) / LTPA)) + minConductance;
+        // printf("LTP %d %d\n", xPulse, numPulse); // TODO: delete afeter debuggging
+        double newConductance = LTPB * (1 - exp(-(xPulse + numPulse) / LTPA)) + minConductance;
+        if (newConductance > maxConductance)
+            return maxConductance;
+        else
+            return newConductance;
     }
     else // LTD
     {
         int xPulse = -LTDA * log(1 - (conductance - minConductance) / LTDB);
-        return LTDB * (1 - exp(-(xPulse + numPulse) / LTDA)) + minConductance;
+        // printf("LTD %d %d\n", xPulse, numPulse); // TODO: delete afeter debuggging
+        double newConductance = LTDB * (1 - exp(-(xPulse + numPulse) / LTDA)) + minConductance;
+        if (newConductance < minConductance)
+            return minConductance;
+        else
+            return newConductance;
     }
 }

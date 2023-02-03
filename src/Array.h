@@ -24,5 +24,6 @@ public:
     double ReferenceRow(double *voltage);
     void WriteArray(int **numPulse);
     double GetMaxWeight();
+    void PrintArray(double scale); // TODO: delete after debugging
     ~Array();
 };

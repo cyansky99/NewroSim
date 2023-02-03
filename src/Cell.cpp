@@ -30,3 +30,10 @@ double Cell::ReadCell(double voltage, double wireResistance, double readNoiseSig
     else
         return current;
 };
+
+void Cell::PrintCell(double scale) // TODO: delete after debugging
+{
+    if (conductance > (material->MaxConductance() + material->MinConductance()) / 2)
+        printf("+");
+    printf("%.5lf", (conductance - (material->MaxConductance() + material->MinConductance()) / 2) * scale);
+}
