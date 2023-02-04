@@ -74,18 +74,16 @@ void Network::FF(double *input)
 
         /* Read array */
         double totalCurrent[dimension[l + 1]] = {};
-        for (int t = 0; t < numBits; t++)
+#pragma omp parallel for
+        for (int m = 0; m < dimension[l + 1]; m++)
         {
-            /* Divide previous total in half */
-            for (int m = 0; m < dimension[l + 1]; m++)
-                totalCurrent[m] /= 2;
-
-            /* Add new current to total */
-            double sumI[dimension[l + 1]];
-            double sumRefI = array[l]->ReferenceColumn(slicedBits[t]); // Reference column current
-            array[l]->ReadArray(slicedBits[t], sumI);
-            for (int m = 0; m < dimension[l + 1]; m++)
-                totalCurrent[m] += (sumI[m] - sumRefI); // Subtract reference column current (medium conductance) to make negative weight
+            for (int t = 0; t < numBits; t++)
+            {
+                double sumI[dimension[l + 1]];
+                double sumRefI = array[l]->ReferenceColumn(slicedBits[t]); // Reference column current
+                array[l]->ReadArray(slicedBits[t], sumI);
+                totalCurrent[m] += (sumI[m] - sumRefI) / pow(2, numBits - t - 1); // Subtract reference column current (medium conductance) to make negative weight
+            }
         }
 
 #pragma omp parallel for
@@ -151,18 +149,16 @@ void Network::BP(int label)
 
         /* Read array backwaards */
         double totalCurrent[dimension[layer - l - 1]] = {};
-        for (int t = 0; t < numBits; t++)
-        {
-            /* Divide previous total in half */
-            for (int n = 0; n < dimension[layer - l - 1]; n++)
-                totalCurrent[n] /= 2;
 
-            /* Add new current to total */
-            double sumI[dimension[layer - l]];
-            double sumRefI = array[layer - l - 1]->ReferenceRow(slicedBits[t]); // Reference row current
-            array[layer - l - 1]->ReadArrayBackwards(slicedBits[t], sumI);
-            for (int n = 0; n < dimension[layer - l - 1]; n++)
-                totalCurrent[n] += (sumI[n] - sumRefI);
+        for (int n = 0; n < dimension[layer - l - 1]; n++)
+        {
+            for (int t = 0; t < numBits; t++)
+            {
+                double sumI[dimension[layer - l]];
+                double sumRefI = array[layer - l - 1]->ReferenceRow(slicedBits[t]); // Reference row current
+                array[layer - l - 1]->ReadArrayBackwards(slicedBits[t], sumI);
+                totalCurrent[n] += (sumI[n] - sumRefI) / pow(2, numBits - t - 1);
+            }
         }
 
         /* Read voltage with linear ramp ADC */
@@ -212,14 +208,14 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
 
         /* Generating probabilistic pulse stream of output */
         bool **outputPulseStream = new bool *[dimension[l]];
-        bool negativeOuput[dimension[l + 1]] = {};
+        bool negativeOutput[dimension[l + 1]] = {};
         if (activation->CanBeNegative())
         {
 #pragma omp parallel for
             for (int n = 0; n < dimension[l]; n++)
             {
                 if (output[l][n] < 0)
-                    negativeOuput[n] = 1;
+                    negativeOutput[n] = 1;
             }
         }
 #pragma omp parallel for
@@ -280,7 +276,7 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
             {
                 for (int m = 0; m < dimension[l + 1]; m++)
                 {
-                    if (negativeOuput[n] ^ negativeError[m]) // LTP (negative gradient, weight increase)
+                    if (negativeOutput[n] ^ negativeError[m]) // LTP (negative gradient, weight increase)
                     {
                         if (outputPulseStream[n][t] & errorPulseStream[m][t])
                         {
@@ -364,8 +360,11 @@ void Network::SnapShot(int i) // TODO: delete after debugging
     }
     case 2:
     {
-        int l = 2;
-        printf("\n[ %d array weight ]\n\n", l);
+        int l = 0;
+        printf("\n[ %d array weight ]\n\n", l + 1);
+        array[l]->PrintArray(1e7);
+        l = 1;
+        printf("\n[ %d array weight ]\n\n", l + 1);
         array[l]->PrintArray(1e7);
         break;
     }
@@ -376,7 +375,7 @@ void Network::SnapShot(int i) // TODO: delete after debugging
             printf("[ %d layer error ] : ", l + 1);
             for (int n = 0; n < dimension[layer - l - 1]; n++)
             {
-                printf("%e ", error[l][n]);
+                printf("%lf ", error[l][n]);
             }
             printf("\n");
         }
