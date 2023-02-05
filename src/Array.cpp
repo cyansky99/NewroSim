@@ -77,12 +77,13 @@ void Array::ReadArrayBackwards(double *voltage, double *current)
         double sumI = 0;
         for (int y = 0; y < Y; y++)
         {
-            sumI += cell[x][y]->ReadCell(voltage[y], wire->UnitResistance(), readNoise);
-            printf("%d,%d: %e \n", x, y, cell[x][y]->conductance);
-        }
 
+            sumI += cell[x][y]->ReadCell(voltage[y], wire->UnitResistance(), readNoise);
+            printf("(%d,%d): %e (%.5lf) \n", x, y, cell[x][y]->conductance, (cell[x][y]->conductance - 2.076945e-8) * 1e7);
+            printf("%e", sumI);
+            printf("\n");
+        }
         printf("\n");
-        PrintArray(1e7);
         current[x] = sumI;
     }
 }
