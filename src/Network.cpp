@@ -74,15 +74,14 @@ void Network::FF(double *input)
 
         /* Read array */
         double totalCurrent[dimension[l + 1]] = {};
-#pragma omp parallel for
-        for (int m = 0; m < dimension[l + 1]; m++)
+        for (int t = 0; t < numBits; t++)
         {
-            for (int t = 0; t < numBits; t++)
+            double sumI[dimension[l + 1]];
+            double sumRefI = array[l]->ReferenceColumn(slicedBits[t]); // Reference column current
+            array[l]->ReadArray(slicedBits[t], sumI);
+            for (int m = 0; m < dimension[l + 1]; m++)
             {
-                double sumI[dimension[l + 1]];
-                double sumRefI = array[l]->ReferenceColumn(slicedBits[t]); // Reference column current
-                array[l]->ReadArray(slicedBits[t], sumI);
-                totalCurrent[m] += (sumI[m] - sumRefI) / pow(2, numBits - t - 1); // Subtract reference column current (medium conductance) to make negative weight
+                totalCurrent[m] += (sumI[m] - sumRefI) / pow(2, numBits - t - 1); // Subtract reference column current (medium conductance) to make negative weight}
             }
         }
 
@@ -120,14 +119,19 @@ void Network::BP(int label)
     /* Backpropagation */
     for (int l = 1; l < layer - 1; l++)
     {
-        /* m = dimension[layer - l] neurons to n = dimension[layer - l - 1] neurons */
+        /* m = dimension[layer - l] neurons to n = dimension[layer - l - 1] neurons (array[layer - l - 1]) */
         double outputVoltageRange = dimension[layer - l] * maxWeight * ItoV * (readVoltage * 2); // Maximum intensity of output voltage
 
         /* Normalize error vector */
         int normError[dimension[layer - l]]; // Normalized error vector
-#pragma omp parallel
+        bool negativeError[dimension[layer - l]] = {};
+#pragma omp parallel for
         for (int m = 0; m < dimension[layer - l]; m++)
-            normError[m] = static_cast<int>(error[l - 1][m] * normFactor * pow(2, numBits));
+        {
+            if (error[l - 1][m] < 0)
+                negativeError[m] = 1;
+            normError[m] = abs(static_cast<int>(error[l - 1][m] * normFactor * pow(2, numBits)));
+        }
 
         double **slicedBits = new double *[numBits];
 #pragma omp parallel
@@ -141,23 +145,33 @@ void Network::BP(int label)
             for (int t = 0; t < numBits; t++)
             {
                 if ((normError[m] >> t) & 1)
-                    slicedBits[t][m] = readVoltage;
+                    slicedBits[t][m] = (negativeError[m]) ? -readVoltage : readVoltage;
                 else
                     slicedBits[t][m] = 0;
             }
         }
 
-        /* Read array backwaards */
-        double totalCurrent[dimension[layer - l - 1]] = {};
-#pragma omp parallel for
-        for (int n = 0; n < dimension[layer - l - 1]; n++)
+        for (int m = 0; m < dimension[layer - l]; m++)
         {
+            printf("%d : ", m);
             for (int t = 0; t < numBits; t++)
             {
-                double sumI[dimension[layer - l - 1]];
-                double sumRefI = array[layer - l - 2]->ReferenceRow(slicedBits[t]); // Reference row current
-                array[layer - l - 2]->ReadArrayBackwards(slicedBits[t], sumI);
+                printf("%lf ", slicedBits[t][m]);
+            }
+            printf("\n");
+        }
+
+        /* Read array backwaards */
+        double totalCurrent[dimension[layer - l - 1]] = {};
+        for (int t = 0; t < numBits; t++)
+        {
+            double sumI[dimension[layer - l - 1]];
+            double sumRefI = array[layer - l - 2]->ReferenceRow(slicedBits[t]); // Reference row current
+            array[layer - l - 1]->ReadArrayBackwards(slicedBits[t], sumI);
+            for (int n = 0; n < dimension[layer - l - 1]; n++)
+            {
                 totalCurrent[n] += (sumI[n] - sumRefI) / pow(2, numBits - t - 1);
+                printf("%d total current at %d bit : %e\n", n, t, totalCurrent[n]);
             }
         }
 
@@ -362,10 +376,10 @@ void Network::SnapShot(int i) // TODO: delete after debugging
     {
         int l = 0;
         printf("\n[ %d array weight ]\n\n", l + 1);
-        array[l]->PrintArray(1e7);
+        array[l]->PrintArray(ItoV);
         l = 1;
         printf("\n[ %d array weight ]\n\n", l + 1);
-        array[l]->PrintArray(1e7);
+        array[l]->PrintArray(ItoV);
         break;
     }
     case 3:

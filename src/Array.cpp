@@ -71,14 +71,18 @@ void Array::ReadArray(double *voltage, double *current)
 
 void Array::ReadArrayBackwards(double *voltage, double *current)
 {
-#pragma omp parallel for
+    // #pragma omp parallel for
     for (int x = 0; x < X; x++)
     {
         double sumI = 0;
         for (int y = 0; y < Y; y++)
         {
             sumI += cell[x][y]->ReadCell(voltage[y], wire->UnitResistance(), readNoise);
+            printf("%d,%d: %e \n", x, y, cell[x][y]->conductance);
         }
+
+        printf("\n");
+        PrintArray(1e7);
         current[x] = sumI;
     }
 }
