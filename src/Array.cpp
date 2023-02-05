@@ -70,7 +70,6 @@ void Array::ReadArray(double *voltage, double *current)
 }
 
 void Array::ReadArrayBackwards(double *voltage, double *current)
-
 {
 #pragma omp parallel for
     for (int x = 0; x < X; x++)

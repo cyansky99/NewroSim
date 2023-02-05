@@ -11,7 +11,7 @@ private:
     int *dimension;         // Dimension of network
     int **output;           // Output value of neuron
     double **error;         // Backpropagated error
-    double ItoV;            // Output current to voltage ratio (read pulse width / capacitance)
+    const double ItoV;      // Output current to voltage ratio (read pulse width / capacitance)
     double readVoltage;     // Voltage of read pulse
     int numBits;            // Number of bits in digital domain
 

@@ -149,14 +149,14 @@ void Network::BP(int label)
 
         /* Read array backwaards */
         double totalCurrent[dimension[layer - l - 1]] = {};
-
+#pragma omp parallel for
         for (int n = 0; n < dimension[layer - l - 1]; n++)
         {
             for (int t = 0; t < numBits; t++)
             {
-                double sumI[dimension[layer - l]];
-                double sumRefI = array[layer - l - 1]->ReferenceRow(slicedBits[t]); // Reference row current
-                array[layer - l - 1]->ReadArrayBackwards(slicedBits[t], sumI);
+                double sumI[dimension[layer - l - 1]];
+                double sumRefI = array[layer - l - 2]->ReferenceRow(slicedBits[t]); // Reference row current
+                array[layer - l - 2]->ReadArrayBackwards(slicedBits[t], sumI);
                 totalCurrent[n] += (sumI[n] - sumRefI) / pow(2, numBits - t - 1);
             }
         }
