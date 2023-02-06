@@ -5,8 +5,8 @@
 
 extern std::mt19937 gen;
 
-Network::Network(int layer, Array **array, Activation *activation, double ItoV, double readVoltage)
-    : layer(layer), array(array), activation(activation), ItoV(ItoV), readVoltage(readVoltage)
+Network::Network(int layer, Array **array, Activation *activation, double ItoV, double readVoltage, int ADCsteps)
+    : layer(layer), array(array), activation(activation), ItoV(ItoV), readVoltage(readVoltage), ADCsteps(ADCsteps)
 {
 #pragma omp parallel for
     /* Checking if the sizes of arrays are compatible */
@@ -61,7 +61,7 @@ void Network::FF(double *input)
 
 #pragma omp parallel for collapse(2)
         /* Bit slicing */
-        for (int n = 0; n < dimension[l]; n++)
+        for (int n = 0; n < dimension[l]; n++) // TODO: for negative output
         {
             for (int t = 0; t < numBits; t++)
             {
@@ -151,27 +151,16 @@ void Network::BP(int label)
             }
         }
 
-        for (int m = 0; m < dimension[layer - l]; m++)
-        {
-            printf("%d : ", m);
-            for (int t = 0; t < numBits; t++)
-            {
-                printf("%lf ", slicedBits[t][m]);
-            }
-            printf("\n");
-        }
-
         /* Read array backwaards */
         double totalCurrent[dimension[layer - l - 1]] = {};
         for (int t = 0; t < numBits; t++)
         {
             double sumI[dimension[layer - l - 1]];
-            double sumRefI = array[layer - l - 2]->ReferenceRow(slicedBits[t]); // Reference row current
+            double sumRefI = array[layer - l - 1]->ReferenceRow(slicedBits[t]); // Reference row current
             array[layer - l - 1]->ReadArrayBackwards(slicedBits[t], sumI);
             for (int n = 0; n < dimension[layer - l - 1]; n++)
             {
                 totalCurrent[n] += (sumI[n] - sumRefI) / pow(2, numBits - t - 1);
-                printf("%d total current at %d bit : %e\n", n, t, totalCurrent[n]);
             }
         }
 
@@ -180,16 +169,18 @@ void Network::BP(int label)
 #pragma omp parallel for
         for (int n = 0; n < dimension[layer - l - 1]; n++)
         {
-            int step = static_cast<int>(totalCurrent[n] * ItoV / (outputVoltageRange / pow(2, numBits)));
+            int step = static_cast<int>(totalCurrent[n] * ItoV / (outputVoltageRange / ADCsteps));
             if (totalCurrent[n] < 0)
                 step--; // Because reference ramp voltage increases from negative value
-            outputVoltage[n] = step * (outputVoltageRange / pow(2, numBits));
+            outputVoltage[n] = step * (outputVoltageRange / ADCsteps);
         }
 
 #pragma omp parallel for
         /* Hadamard product with differential coefficient vector & divide with normalization factor */
         for (int n = 0; n < dimension[layer - l - 1]; n++)
+        {
             error[l][n] = outputVoltage[n] * activation->Derivative(output[layer - l - 1][n]) / normFactor;
+        }
 
         /* Next normalization factor */
         normFactor *= 1 / outputVoltageRange / activation->GetMaxDiff();
@@ -361,7 +352,7 @@ void Network::SnapShot(int i) // TODO: delete after debugging
     {
     case 1:
     {
-        for (int l = layer - 1; l < layer; l++)
+        for (int l = 0; l < layer; l++)
         {
             printf("[ %d layer output ] :", l + 1);
             for (int n = 0; n < dimension[l]; n++)
@@ -378,6 +369,9 @@ void Network::SnapShot(int i) // TODO: delete after debugging
         printf("\n[ %d array weight ]\n\n", l + 1);
         array[l]->PrintArray(ItoV);
         l = 1;
+        printf("\n[ %d array weight ]\n\n", l + 1);
+        array[l]->PrintArray(ItoV);
+        l = 2;
         printf("\n[ %d array weight ]\n\n", l + 1);
         array[l]->PrintArray(ItoV);
         break;

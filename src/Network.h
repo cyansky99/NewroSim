@@ -13,10 +13,11 @@ private:
     double **error;         // Backpropagated error
     const double ItoV;      // Output current to voltage ratio (read pulse width / capacitance)
     double readVoltage;     // Voltage of read pulse
-    int numBits;            // Number of bits in digital domain
+    int ADCsteps;           // Steps of ADC for backpropagation
+    int numBits;            // Number of bits used in feedforward
 
 public:
-    Network(int layer, Array **array, Activation *activation, double ItoV, double readVoltage);
+    Network(int layer, Array **array, Activation *activation, double ItoV, double readVoltage, int ADCsteps);
     void FF(double *input);
     void BP(int label);
     void WeightUpdate(double *learningRate, int streamLength, int numLevelLTP, int numLevelLTD);

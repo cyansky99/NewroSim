@@ -71,19 +71,14 @@ void Array::ReadArray(double *voltage, double *current)
 
 void Array::ReadArrayBackwards(double *voltage, double *current)
 {
-    // #pragma omp parallel for
+#pragma omp parallel for
     for (int x = 0; x < X; x++)
     {
         double sumI = 0;
         for (int y = 0; y < Y; y++)
         {
-
             sumI += cell[x][y]->ReadCell(voltage[y], wire->UnitResistance(), readNoise);
-            printf("(%d,%d): %e (%.5lf) \n", x, y, cell[x][y]->conductance, (cell[x][y]->conductance - 2.076945e-8) * 1e7);
-            printf("%e", sumI);
-            printf("\n");
         }
-        printf("\n");
         current[x] = sumI;
     }
 }
@@ -91,6 +86,8 @@ void Array::ReadArrayBackwards(double *voltage, double *current)
 double Array::ReferenceColumn(double *voltage)
 {
     double sumI = 0;
+#pragma omp parallel for reduction(+ \
+                                   : sumI)
     for (int x = 0; x < X; x++)
     {
         sumI += refCol[x]->ReadCell(voltage[x], wire->UnitResistance(), readNoise);
@@ -101,6 +98,8 @@ double Array::ReferenceColumn(double *voltage)
 double Array::ReferenceRow(double *voltage)
 {
     double sumI = 0;
+#pragma omp parallel for reduction(+ \
+                                   : sumI)
     for (int y = 0; y < Y; y++)
     {
         sumI += refRow[y]->ReadCell(voltage[y], wire->UnitResistance(), readNoise);
@@ -110,6 +109,7 @@ double Array::ReferenceRow(double *voltage)
 
 void Array::WriteArray(int **numPulse)
 {
+#pragma omp parallel for collapse(2)
     for (int x = 0; x < X; x++)
     {
         for (int y = 0; y < Y; y++)

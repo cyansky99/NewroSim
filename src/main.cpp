@@ -15,8 +15,8 @@ std::mt19937 gen(rd());
 
 int main()
 {
-    // Data data(60000, 10000, 784);
-    // data.ReadData();
+    Data data(60000, 10000, 784);
+    data.ReadData();
 
     ModeledMaterial AgSi(3.0769e-9, 3.8462e-8, 97, 100, 2.4, -4.88, 0.0);
     // Wire wire(100, 2, 2.3, 2.73e-8);
@@ -24,60 +24,51 @@ int main()
     // Transistor transistor(15e3);
     Transistor transistor(0);
 
-    Array array1(4, 6, &wire, &AgSi, &transistor, 0.0);
-    Array array2(6, 3, &wire, &AgSi, &transistor, 0.0);
-    Array *a[2] = {&array1, &array2};
-
-    ADCSigmoid activation(4, 4);
-    Network network(3, a, &activation, 1e7, 0.5);
-    double input[4] = {0, 0.25, 0.75, 1};
-    network.FF(input);
-    network.BP(2);
-    network.SnapShot(1);
-    network.SnapShot(2);
-    network.SnapShot(3);
-
-    // Array array1(784, 256, &wire, &AgSi, &transistor, 0.0);
-    // Array array2(256, 128, &wire, &AgSi, &transistor, 0.0);
-    // Array array3(128, 10, &wire, &AgSi, &transistor, 0.0);
-
+    // Array array1(4, 6, &wire, &AgSi, &transistor, 0.0);
+    // Array array2(6, 3, &wire, &AgSi, &transistor, 0.0);
+    // Array array3(3, 3, &wire, &AgSi, &transistor, 0.0);
     // Array *a[3] = {&array1, &array2, &array3};
 
     // ADCSigmoid activation(4, 4);
+    // Network network(4, a, &activation, 1e7, 0.5, 1024);
+    // double input[4] = {0, 0.25, 0.75, 1};
+    // network.FF(input);
+    // network.BP(2);
+    // network.SnapShot(1);
+    // network.SnapShot(2);
+    // network.SnapShot(3);
 
-    // Network network(4, a, &activation, 2e7, 0.5);
+    Array array1(784, 256, &wire, &AgSi, &transistor, 0.0);
+    Array array2(256, 128, &wire, &AgSi, &transistor, 0.0);
+    Array array3(128, 10, &wire, &AgSi, &transistor, 0.0);
 
-    // double learningRate[3] = {0.001, 0.001, 0.001};
+    Array *a[3] = {&array1, &array2, &array3};
 
-    // printf("Train Start\n");
-    // for (int i = 0; i < 10000; i++)
-    // {
+    ADCSigmoid activation(4, 4);
 
-    //     network.FF(data.GetTrainX()[i]);
+    Network network(4, a, &activation, 2e7, 0.5, 1024);
 
-    //     network.BP(data.GetTrainY()[i]);
+    double learningRate[3] = {0.0001, 0.0001, 0.0001};
 
-    //     // network.SnapShot(3);
-    //     network.WeightUpdate(learningRate, 400, 97, 100);
-    //     printf("%d) ", i);
-    //     network.SnapShot(1);
-    // }
+    printf("Train Start\n");
+    for (int i = 0; i < 1000; i++)
+    {
+        network.FF(data.GetTrainX()[i]);
+        network.BP(data.GetTrainY()[i]);
+        network.WeightUpdate(learningRate, 400, 97, 100);
+    }
 
-    // printf("\n");
-    // // network.SnapShot(2);
-    // // network.SnapShot(2);
-
-    // printf("Test Start\n");
-    // int cnt = 0;
-    // for (int j = 0; j < 1000; j++)
-    // {
-    //     network.FF(data.GetTestX()[j]);
-    //     network.SnapShot(1);
-    //     if (network.Test(data.GetTestY()[j]))
-    //         cnt++;
-    //     printf("Label : %d\n", data.GetTestY()[j]);
-    // }
-    // std::cout << static_cast<double>(cnt) / 10 << " %" << std::endl;
+    printf("Test Start\n");
+    int cnt = 0;
+    for (int j = 0; j < 1000; j++)
+    {
+        network.FF(data.GetTestX()[j]);
+        if (network.Test(data.GetTestY()[j]))
+            cnt++;
+        network.SnapShot(1);
+        printf("Label : %d\n", data.GetTestY()[j]);
+    }
+    std::cout << static_cast<double>(cnt) / 10 << " %" << std::endl;
 
     return 0;
 };

@@ -8,6 +8,7 @@ private:
     int x, y;               // Cell location
     Material *material;     // Memristor material in a cell
     Transistor *transistor; // Access transistor in a cell
+    double accessResistance;
 
 public:
     double conductance; // Cell conductance
