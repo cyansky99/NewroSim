@@ -79,6 +79,7 @@ void Network::FF(double *input)
             double sumI[dimension[l + 1]];
             double sumRefI = array[l]->ReferenceColumn(slicedBits[t]); // Reference column current
             array[l]->ReadArray(slicedBits[t], sumI);
+#pragma omp parallel for
             for (int m = 0; m < dimension[l + 1]; m++)
             {
                 totalCurrent[m] += (sumI[m] - sumRefI) / pow(2, numBits - t - 1); // Subtract reference column current (medium conductance) to make negative weight}
@@ -158,6 +159,7 @@ void Network::BP(int label)
             double sumI[dimension[layer - l - 1]];
             double sumRefI = array[layer - l - 1]->ReferenceRow(slicedBits[t]); // Reference row current
             array[layer - l - 1]->ReadArrayBackwards(slicedBits[t], sumI);
+#pragma omp parallel for
             for (int n = 0; n < dimension[layer - l - 1]; n++)
             {
                 totalCurrent[n] += (sumI[n] - sumRefI) / pow(2, numBits - t - 1);
@@ -203,6 +205,7 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
         for (int n = 0; n < dimension[l]; n++)
         {
             numPulse[n] = new int[dimension[l + 1]];
+#pragma omp parallel for
             for (int m = 0; m < dimension[l + 1]; m++)
                 numPulse[n][m] = 0;
         }
@@ -228,7 +231,7 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
         {
             outputPulseStream[n] = new bool[streamLength * 2]; // Generate pulse stream twice for positive/negative weight update
 
-            double pLTP = fabs(output[l][n] / pow(2, numBits) * CLTP); //    Pulse probability for LTP
+            double pLTP = fabs(output[l][n] / pow(2, numBits) * CLTP); // Pulse probability for LTP
             double pLTD = fabs(output[l][n] / pow(2, numBits) * CLTD); // Pulse probability for LTD
             // printf("%lf %lf \n", pLTP, pLTD);
             std::bernoulli_distribution disLTP(pLTP);
@@ -272,8 +275,9 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
                 errorPulseStream[m][t] = disLTD(gen);
             }
         }
-
-#pragma omp parallel for collapse(3)
+        int cnt = 0; // TODO: delete after debugging
+#pragma omp parallel for collapse(3) reduction(+ \
+                                               : cnt)
         /* Count coincident pulses */
         for (int t = 0; t < streamLength; t++)
         {
@@ -286,6 +290,7 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
                         if (outputPulseStream[n][t] & errorPulseStream[m][t])
                         {
                             numPulse[n][m]++;
+                            cnt++;
                         }
                     }
                     else // LTD (positive gradient, weight decrease)
@@ -293,14 +298,18 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
                         if (outputPulseStream[n][t + streamLength] & errorPulseStream[m][t + streamLength])
                         {
                             numPulse[n][m]--;
+                            cnt++;
                         }
                     }
                 }
             }
         }
 
+        // printf("%d array -> %d pulses\n", l + 1, cnt); // TODO: delete after debugging
+
         /* Weight update with WriteArray */
-        array[l]->WriteArray(numPulse);
+        array[l]
+            ->WriteArray(numPulse);
 
         /* Delete memory allocaion */
 
@@ -352,7 +361,7 @@ void Network::SnapShot(int i) // TODO: delete after debugging
     {
     case 1:
     {
-        for (int l = 0; l < layer; l++)
+        for (int l = layer - 1; l < layer; l++)
         {
             printf("[ %d layer output ] :", l + 1);
             for (int n = 0; n < dimension[l]; n++)
@@ -371,9 +380,9 @@ void Network::SnapShot(int i) // TODO: delete after debugging
         l = 1;
         printf("\n[ %d array weight ]\n\n", l + 1);
         array[l]->PrintArray(ItoV);
-        l = 2;
-        printf("\n[ %d array weight ]\n\n", l + 1);
-        array[l]->PrintArray(ItoV);
+        // l = 2;
+        // printf("\n[ %d array weight ]\n\n", l + 1);
+        // array[l]->PrintArray(ItoV);
         break;
     }
     case 3:
@@ -383,7 +392,7 @@ void Network::SnapShot(int i) // TODO: delete after debugging
             printf("[ %d layer error ] : ", l + 1);
             for (int n = 0; n < dimension[layer - l - 1]; n++)
             {
-                printf("%lf ", error[l][n]);
+                printf("%e ", error[l][n]);
             }
             printf("\n");
         }
