@@ -28,9 +28,11 @@ Array::Array(int X, int Y, Wire *wire, Material *material, Transistor *transisto
 
     /* Get maximum weight */
     maxWeight = (material->MaxConductance() - material->MinConductance()) / 2;
+
+    wireResistance = wire->UnitResistance();
 }
 
-Array::Array(int X, int Y, Wire *wire, Material ***material, Transistor *transistor, double readNoise)
+Array::Array(int X, int Y, Wire *wire, Material ***material, Transistor *transistor, double readNoise) // TODO: add reference column/row and wire resistance, max weight
     : X(X), Y(Y), wire(wire), readNoise(readNoise)
 {
     cell = new Cell **[X];
@@ -63,7 +65,7 @@ void Array::ReadArray(double *voltage, double *current)
         double sumI = 0;
         for (int x = 0; x < X; x++)
         {
-            sumI += cell[x][y]->ReadCell(voltage[x], wire->UnitResistance(), readNoise);
+            sumI += cell[x][y]->ReadCell(voltage[x], wireResistance, readNoise);
         }
         current[y] = sumI;
     }
@@ -77,7 +79,7 @@ void Array::ReadArrayBackwards(double *voltage, double *current)
         double sumI = 0;
         for (int y = 0; y < Y; y++)
         {
-            sumI += cell[x][y]->ReadCell(voltage[y], wire->UnitResistance(), readNoise);
+            sumI += cell[x][y]->ReadCell(voltage[y], wireResistance, readNoise);
         }
         current[x] = sumI;
     }
@@ -90,7 +92,7 @@ double Array::ReferenceColumn(double *voltage)
                                    : sumI)
     for (int x = 0; x < X; x++)
     {
-        sumI += refCol[x]->ReadCell(voltage[x], wire->UnitResistance(), readNoise);
+        sumI += refCol[x]->ReadCell(voltage[x], wireResistance, readNoise);
     }
     return sumI;
 }
@@ -102,7 +104,7 @@ double Array::ReferenceRow(double *voltage)
                                    : sumI)
     for (int y = 0; y < Y; y++)
     {
-        sumI += refRow[y]->ReadCell(voltage[y], wire->UnitResistance(), readNoise);
+        sumI += refRow[y]->ReadCell(voltage[y], wireResistance, readNoise);
     }
     return sumI;
 }

@@ -90,6 +90,12 @@ void Network::FF(double *input)
         /* Activate */
         for (int m = 0; m < dimension[l + 1]; m++)
             output[l + 1][m] = activation->Activate(totalCurrent[m] * ItoV);
+
+#pragma omp parallel for
+        /* Delete memory Allocation*/
+        for (int t = 0; t < numBits; t++)
+            delete[] slicedBits[t];
+        delete[] slicedBits;
     }
 }
 
@@ -186,6 +192,12 @@ void Network::BP(int label)
 
         /* Next normalization factor */
         normFactor *= 1 / outputVoltageRange / activation->GetMaxDiff();
+
+#pragma omp parallel for
+        /* Delete memory Allocation*/
+        for (int t = 0; t < numBits; t++)
+            delete[] slicedBits[t];
+        delete[] slicedBits;
     }
 }
 
@@ -308,8 +320,7 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
         // printf("%d array -> %d pulses\n", l + 1, cnt); // TODO: delete after debugging
 
         /* Weight update with WriteArray */
-        array[l]
-            ->WriteArray(numPulse);
+        array[l]->WriteArray(numPulse);
 
         /* Delete memory allocaion */
 
