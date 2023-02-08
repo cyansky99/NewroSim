@@ -48,32 +48,33 @@ int main()
 
     Network network(4, a, &activation, 1e7, 0.5, 1024);
 
-    double learningRate[3] = {0.001, 0.001, 0.001};
+    double learningRate[3] = {0.1, 0.001, 0.0001};
     // 0.63, 0.11, 0.25
 
     std::uniform_int_distribution<int> dis(0, 59999);
 
-    printf("Train Start\n");
     int num;
-    for (int i = 0; i < 60000; i++)
+    for (int epoch = 0; epoch < 1; epoch++)
     {
-        num = dis(gen);
-        network.FF(data.GetTrainX()[num]);
-        network.BP(data.GetTrainY()[num]);
-        network.WeightUpdate(learningRate, 400, 97, 100);
-    }
-
-    printf("Test Start\n");
-    int cnt = 0;
-    for (int j = 0; j < 1000; j++)
-    {
-        network.FF(data.GetTestX()[j]);
+        printf("Epoch %d\n", epoch + 1);
+        printf("Train Start\n");
+        for (int i = 0; i < 100; i++)
+        {
+            num = dis(gen);
+            network.FF(data.GetTrainX()[num]);
+            network.BP(data.GetTrainY()[num]);
+            network.WeightUpdate(learningRate, 400, 97, 100);
+        }
         network.SnapShot(1);
-        printf("Answer: %d\n", data.GetTestY()[j]);
-        if (network.Test(data.GetTestY()[j]))
-            cnt++;
+        printf("Test Start\n");
+        int cnt = 0;
+        for (int j = 0; j < 1000; j++)
+        {
+            network.FF(data.GetTestX()[j]);
+            if (network.Test(data.GetTestY()[j]))
+                cnt++;
+        }
+        std::cout << static_cast<double>(cnt) / 10 << " %" << std::endl;
     }
-    std::cout << static_cast<double>(cnt) / 10 << " %" << std::endl;
-
     return 0;
 };

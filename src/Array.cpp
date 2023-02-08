@@ -136,8 +136,10 @@ Array::~Array()
 
     for (int x = 0; x < X; x++)
         delete refCol[x];
+    delete refCol;
     for (int y = 0; y < Y; y++)
         delete refRow[y];
+    delete refRow;
 }
 
 void Array::PrintArray(double scale) // TODO: delete after debugging

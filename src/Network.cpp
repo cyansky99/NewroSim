@@ -30,10 +30,12 @@ Network::Network(int layer, Array **array, Activation *activation, double ItoV, 
 
     /* Mermory allocation for members */
     output = new int *[layer];
+#pragma omp parallel for
     for (int i = 0; i < layer; i++)
     {
         output[i] = new int[dimension[i]];
     }
+#pragma omp parallel for
     error = new double *[layer - 1];
     for (int i = 0; i < layer - 1; i++)
     {
@@ -91,7 +93,6 @@ void Network::FF(double *input)
         for (int m = 0; m < dimension[l + 1]; m++)
             output[l + 1][m] = activation->Activate(totalCurrent[m] * ItoV);
 
-#pragma omp parallel for
         /* Delete memory Allocation*/
         for (int t = 0; t < numBits; t++)
             delete[] slicedBits[t];
@@ -193,7 +194,6 @@ void Network::BP(int label)
         /* Next normalization factor */
         normFactor *= 1 / outputVoltageRange / activation->GetMaxDiff();
 
-#pragma omp parallel for
         /* Delete memory Allocation*/
         for (int t = 0; t < numBits; t++)
             delete[] slicedBits[t];
@@ -323,16 +323,12 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
         array[l]->WriteArray(numPulse);
 
         /* Delete memory allocaion */
-
-#pragma omp parallel for
         for (int n = 0; n < dimension[l]; n++)
             delete[] numPulse[n];
         delete[] numPulse;
-#pragma omp parallel for
         for (int n = 0; n < dimension[l]; n++)
             delete[] outputPulseStream[n];
         delete[] outputPulseStream;
-#pragma omp parallel for
         for (int m = 0; m < dimension[l + 1]; m++)
             delete[] errorPulseStream[m];
         delete[] errorPulseStream;
@@ -372,7 +368,7 @@ void Network::SnapShot(int i) // TODO: delete after debugging
     {
     case 1:
     {
-        for (int l = layer - 1; l < layer; l++)
+        for (int l = 0; l < layer; l++)
         {
             printf("[ %d layer output ] :", l + 1);
             for (int n = 0; n < dimension[l]; n++)
