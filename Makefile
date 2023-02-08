@@ -1,5 +1,5 @@
 CC = g++
-CXXFLAGS = -Wall -O2 -fopenmp
+CXXFLAGS = -Wall -fopenmp -g
 LDFLAGS =
 SRC_DIR = ./src
 OBJ_DIR = ./obj

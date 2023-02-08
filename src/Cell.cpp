@@ -10,9 +10,10 @@ Cell::Cell(int x, int y, Material *material, Transistor *transistor)
     accessResistance = transistor->getOnResistance();
 }
 
-Cell::Cell(int x, int y, Transistor *transistor, double conductance)
-    : x(x), y(y), transistor(transistor), conductance(conductance)
+Cell::Cell(int x, int y, Material *material, Transistor *transistor, double conductance)
+    : x(x), y(y), material(material), transistor(transistor), conductance(conductance)
 {
+    accessResistance = transistor->getOnResistance();
 }
 
 void Cell::WriteCell(int numPulse)

@@ -15,7 +15,7 @@ public:
     // TODO: private after debugging
 
     Cell(int x, int y, Material *material, Transistor *transistor);
-    Cell(int x, int y, Transistor *transistor, double conductance);
+    Cell(int x, int y, Material *material, Transistor *transistor, double conductance);
     void WriteCell(int numPulse);
     double ReadCell(double voltage, double wireResistivity, double readNoiseSigma);
     void PrintCell(double scale); // TODO: delete after debugging

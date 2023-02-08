@@ -6,7 +6,6 @@ Array::Array(int X, int Y, Wire *wire, Material *material, Transistor *transisto
     : X(X), Y(Y), wire(wire), readNoise(readNoise)
 {
     cell = new Cell **[X];
-
     for (int x = 0; x < X; x++)
     {
         cell[x] = new Cell *[Y];
@@ -19,12 +18,12 @@ Array::Array(int X, int Y, Wire *wire, Material *material, Transistor *transisto
     /* Make reference column */
     refCol = new Cell *[X];
     for (int x = 0; x < X; x++)
-        refCol[x] = new Cell(x, Y, transistor, (material->MinConductance() + material->MaxConductance()) / 2);
+        refCol[x] = new Cell(x, Y, material, transistor, (material->MinConductance() + material->MaxConductance()) / 2);
 
     /* Make reference row */
     refRow = new Cell *[Y];
     for (int y = 0; y < Y; y++)
-        refRow[y] = new Cell(X, y, transistor, (material->MinConductance() + material->MaxConductance()) / 2);
+        refRow[y] = new Cell(X, y, material, transistor, (material->MinConductance() + material->MaxConductance()) / 2);
 
     /* Get maximum weight */
     maxWeight = (material->MaxConductance() - material->MinConductance()) / 2;
@@ -59,7 +58,6 @@ int Array::GetY()
 
 void Array::ReadArray(double *voltage, double *current)
 {
-#pragma omp parallel for
     for (int y = 0; y < Y; y++)
     {
         double sumI = 0;
@@ -73,7 +71,6 @@ void Array::ReadArray(double *voltage, double *current)
 
 void Array::ReadArrayBackwards(double *voltage, double *current)
 {
-#pragma omp parallel for
     for (int x = 0; x < X; x++)
     {
         double sumI = 0;
@@ -88,8 +85,6 @@ void Array::ReadArrayBackwards(double *voltage, double *current)
 double Array::ReferenceColumn(double *voltage)
 {
     double sumI = 0;
-#pragma omp parallel for reduction(+ \
-                                   : sumI)
     for (int x = 0; x < X; x++)
     {
         sumI += refCol[x]->ReadCell(voltage[x], wireResistance, readNoise);
@@ -100,8 +95,6 @@ double Array::ReferenceColumn(double *voltage)
 double Array::ReferenceRow(double *voltage)
 {
     double sumI = 0;
-#pragma omp parallel for reduction(+ \
-                                   : sumI)
     for (int y = 0; y < Y; y++)
     {
         sumI += refRow[y]->ReadCell(voltage[y], wireResistance, readNoise);
@@ -111,7 +104,7 @@ double Array::ReferenceRow(double *voltage)
 
 void Array::WriteArray(int **numPulse)
 {
-#pragma omp parallel for collapse(2)
+
     for (int x = 0; x < X; x++)
     {
         for (int y = 0; y < Y; y++)
@@ -136,10 +129,10 @@ Array::~Array()
 
     for (int x = 0; x < X; x++)
         delete refCol[x];
-    delete refCol;
+    delete[] refCol;
     for (int y = 0; y < Y; y++)
         delete refRow[y];
-    delete refRow;
+    delete[] refRow;
 }
 
 void Array::PrintArray(double scale) // TODO: delete after debugging

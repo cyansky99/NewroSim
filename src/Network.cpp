@@ -8,7 +8,6 @@ extern std::mt19937 gen;
 Network::Network(int layer, Array **array, Activation *activation, double ItoV, double readVoltage, int ADCsteps)
     : layer(layer), array(array), activation(activation), ItoV(ItoV), readVoltage(readVoltage), ADCsteps(ADCsteps)
 {
-#pragma omp parallel for
     /* Checking if the sizes of arrays are compatible */
     for (int i = 0; i < layer - 2; i++)
     {
@@ -30,12 +29,11 @@ Network::Network(int layer, Array **array, Activation *activation, double ItoV, 
 
     /* Mermory allocation for members */
     output = new int *[layer];
-#pragma omp parallel for
     for (int i = 0; i < layer; i++)
     {
         output[i] = new int[dimension[i]];
     }
-#pragma omp parallel for
+
     error = new double *[layer - 1];
     for (int i = 0; i < layer - 1; i++)
     {
@@ -46,7 +44,6 @@ Network::Network(int layer, Array **array, Activation *activation, double ItoV, 
 void Network::FF(double *input)
 {
     /* Digitalizing input vector */
-#pragma omp parallel for
     for (int n = 0; n < dimension[0]; n++)
     {
         output[0][n] = static_cast<int>(input[n] * (pow(2, numBits) - 1));
@@ -61,7 +58,6 @@ void Network::FF(double *input)
         for (int t = 0; t < numBits; t++)
             slicedBits[t] = new double[dimension[l]];
 
-#pragma omp parallel for collapse(2)
         /* Bit slicing */
         for (int n = 0; n < dimension[l]; n++) // TODO: for negative output
         {
@@ -81,14 +77,12 @@ void Network::FF(double *input)
             double sumI[dimension[l + 1]];
             double sumRefI = array[l]->ReferenceColumn(slicedBits[t]); // Reference column current
             array[l]->ReadArray(slicedBits[t], sumI);
-#pragma omp parallel for
             for (int m = 0; m < dimension[l + 1]; m++)
             {
                 totalCurrent[m] += (sumI[m] - sumRefI) / pow(2, numBits - t - 1); // Subtract reference column current (medium conductance) to make negative weight}
             }
         }
 
-#pragma omp parallel for
         /* Activate */
         for (int m = 0; m < dimension[l + 1]; m++)
             output[l + 1][m] = activation->Activate(totalCurrent[m] * ItoV);
@@ -106,14 +100,12 @@ void Network::BP(int label)
     {
         /* Substract target vector */
         int delta[dimension[layer - 1]] = {}; // Difference between target and network output
-#pragma omp parallel for
         for (int m = 0; m < dimension[layer - 1]; m++)
         {
             delta[m] = output[layer - 1][m];
         }
         delta[label] = output[layer - 1][label] - (pow(2, numBits) - 1);
 
-#pragma omp parallel for
         /* Hadamard product with differential coefficient vector */
         for (int m = 0; m < dimension[layer - 1]; m++)
         {
@@ -133,7 +125,7 @@ void Network::BP(int label)
         /* Normalize error vector */
         int normError[dimension[layer - l]]; // Normalized error vector
         bool negativeError[dimension[layer - l]] = {};
-#pragma omp parallel for
+
         for (int m = 0; m < dimension[layer - l]; m++)
         {
             if (error[l - 1][m] < 0)
@@ -142,11 +134,9 @@ void Network::BP(int label)
         }
 
         double **slicedBits = new double *[numBits];
-#pragma omp parallel
         for (int t = 0; t < numBits; t++)
             slicedBits[t] = new double[dimension[layer - l]];
 
-#pragma omp parallel for collapse(2)
         /* Bit slicing */
         for (int m = 0; m < dimension[layer - l]; m++)
         {
@@ -166,7 +156,6 @@ void Network::BP(int label)
             double sumI[dimension[layer - l - 1]];
             double sumRefI = array[layer - l - 1]->ReferenceRow(slicedBits[t]); // Reference row current
             array[layer - l - 1]->ReadArrayBackwards(slicedBits[t], sumI);
-#pragma omp parallel for
             for (int n = 0; n < dimension[layer - l - 1]; n++)
             {
                 totalCurrent[n] += (sumI[n] - sumRefI) / pow(2, numBits - t - 1);
@@ -175,7 +164,6 @@ void Network::BP(int label)
 
         /* Read voltage with linear ramp ADC */
         double outputVoltage[dimension[layer - l - 1]];
-#pragma omp parallel for
         for (int n = 0; n < dimension[layer - l - 1]; n++)
         {
             int step = static_cast<int>(totalCurrent[n] * ItoV / (outputVoltageRange / ADCsteps));
@@ -184,7 +172,6 @@ void Network::BP(int label)
             outputVoltage[n] = step * (outputVoltageRange / ADCsteps);
         }
 
-#pragma omp parallel for
         /* Hadamard product with differential coefficient vector & divide with normalization factor */
         for (int n = 0; n < dimension[layer - l - 1]; n++)
         {
@@ -217,7 +204,6 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
         for (int n = 0; n < dimension[l]; n++)
         {
             numPulse[n] = new int[dimension[l + 1]];
-#pragma omp parallel for
             for (int m = 0; m < dimension[l + 1]; m++)
                 numPulse[n][m] = 0;
         }
@@ -228,17 +214,16 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
 
         /* Generating probabilistic pulse stream of output */
         bool **outputPulseStream = new bool *[dimension[l]];
-        bool negativeOutput[dimension[l + 1]] = {};
+        bool negativeOutput[dimension[l]] = {};
         if (activation->CanBeNegative())
         {
-#pragma omp parallel for
             for (int n = 0; n < dimension[l]; n++)
             {
                 if (output[l][n] < 0)
                     negativeOutput[n] = 1;
             }
         }
-#pragma omp parallel for
+
         for (int n = 0; n < dimension[l]; n++)
         {
             outputPulseStream[n] = new bool[streamLength * 2]; // Generate pulse stream twice for positive/negative weight update
@@ -263,13 +248,11 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
         /* Generating probabilistic pulse stream of error */
         bool **errorPulseStream = new bool *[dimension[l + 1]];
         bool negativeError[dimension[l + 1]] = {};
-#pragma omp parallel for
         for (int m = 0; m < dimension[l + 1]; m++)
         {
             if (error[layer - l - 2][m] < 0)
                 negativeError[m] = 1;
         }
-#pragma omp parallel for
         for (int m = 0; m < dimension[l + 1]; m++)
         {
             errorPulseStream[m] = new bool[streamLength * 2]; // Generate pulse stream twice for positive/negative weight update
@@ -287,9 +270,7 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
                 errorPulseStream[m][t] = disLTD(gen);
             }
         }
-        int cnt = 0; // TODO: delete after debugging
-#pragma omp parallel for collapse(3) reduction(+ \
-                                               : cnt)
+
         /* Count coincident pulses */
         for (int t = 0; t < streamLength; t++)
         {
@@ -302,7 +283,6 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
                         if (outputPulseStream[n][t] & errorPulseStream[m][t])
                         {
                             numPulse[n][m]++;
-                            cnt++;
                         }
                     }
                     else // LTD (positive gradient, weight decrease)
@@ -310,14 +290,11 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
                         if (outputPulseStream[n][t + streamLength] & errorPulseStream[m][t + streamLength])
                         {
                             numPulse[n][m]--;
-                            cnt++;
                         }
                     }
                 }
             }
         }
-
-        // printf("%d array -> %d pulses\n", l + 1, cnt); // TODO: delete after debugging
 
         /* Weight update with WriteArray */
         array[l]->WriteArray(numPulse);
