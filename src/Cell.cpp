@@ -21,6 +21,17 @@ void Cell::WriteCell(int numPulse)
     conductance = material->NewConductance(conductance, numPulse);
 }
 
+void Cell::IdealWriteCell(double deltaConductance)
+{
+    double newConductance = conductance + deltaConductance;
+    if (newConductance > material->MaxConductance())
+        conductance = material->MaxConductance();
+    else if (newConductance < material->MinConductance())
+        conductance = material->MinConductance();
+    else
+        conductance = newConductance;
+}
+
 double Cell::ReadCell(double voltage, double wireResistance, double readNoiseSigma)
 {
     double current = voltage / (1 / conductance + wireResistance * (x + y + 2) + accessResistance);

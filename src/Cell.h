@@ -17,6 +17,7 @@ public:
     Cell(int x, int y, Material *material, Transistor *transistor);
     Cell(int x, int y, Material *material, Transistor *transistor, double conductance);
     void WriteCell(int numPulse);
+    void IdealWriteCell(double deltaConductance);
     double ReadCell(double voltage, double wireResistivity, double readNoiseSigma);
     void PrintCell(double scale); // TODO: delete after debugging
 };

@@ -58,33 +58,35 @@ int Array::GetY()
 
 void Array::ReadArray(double *voltage, double *current)
 {
+#pragma omp parallel for collapse(2) reduction(+ \
+                                               : current[:Y])
     for (int y = 0; y < Y; y++)
     {
-        double sumI = 0;
         for (int x = 0; x < X; x++)
         {
-            sumI += cell[x][y]->ReadCell(voltage[x], wireResistance, readNoise);
+            current[y] += cell[x][y]->ReadCell(voltage[x], wireResistance, readNoise);
         }
-        current[y] = sumI;
     }
 }
 
 void Array::ReadArrayBackwards(double *voltage, double *current)
 {
+#pragma omp parallel for collapse(2) reduction(+ \
+                                               : current[:X])
     for (int x = 0; x < X; x++)
     {
-        double sumI = 0;
         for (int y = 0; y < Y; y++)
         {
-            sumI += cell[x][y]->ReadCell(voltage[y], wireResistance, readNoise);
+            current[x] += cell[x][y]->ReadCell(voltage[y], wireResistance, readNoise);
         }
-        current[x] = sumI;
     }
 }
 
 double Array::ReferenceColumn(double *voltage)
 {
     double sumI = 0;
+#pragma omp parallel for reduction(+ \
+                                   : sumI)
     for (int x = 0; x < X; x++)
     {
         sumI += refCol[x]->ReadCell(voltage[x], wireResistance, readNoise);
@@ -95,6 +97,8 @@ double Array::ReferenceColumn(double *voltage)
 double Array::ReferenceRow(double *voltage)
 {
     double sumI = 0;
+#pragma omp parallel for reduction(+ \
+                                   : sumI)
     for (int y = 0; y < Y; y++)
     {
         sumI += refRow[y]->ReadCell(voltage[y], wireResistance, readNoise);
@@ -104,11 +108,21 @@ double Array::ReferenceRow(double *voltage)
 
 void Array::WriteArray(int **numPulse)
 {
-
+#pragma omp parallel for collapse(2)
     for (int x = 0; x < X; x++)
     {
         for (int y = 0; y < Y; y++)
             cell[x][y]->WriteCell(numPulse[x][y]);
+    }
+}
+
+void Array::IdealWriteArray(double **deltaConductance)
+{
+#pragma omp parallel for collapse(2)
+    for (int x = 0; x < X; x++)
+    {
+        for (int y = 0; y < Y; y++)
+            cell[x][y]->IdealWriteCell(deltaConductance[x][y]);
     }
 }
 
