@@ -296,7 +296,7 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
                 {
                     if (negativeOutput[n] ^ negativeError[m]) // LTP (negative gradient, weight increase)
                     {
-                        if (outputPulseStream[n][t] & errorPulseStream[m][t])
+                        if (outputPulseStream[n][t] && errorPulseStream[m][t])
                         {
 #pragma omp atomic
                             numPulse[n][m]++;
@@ -304,7 +304,7 @@ void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelL
                     }
                     else // LTD (positive gradient, weight decrease)
                     {
-                        if (outputPulseStream[n][t + streamLength] & errorPulseStream[m][t + streamLength])
+                        if (outputPulseStream[n][t + streamLength] && errorPulseStream[m][t + streamLength])
                         {
 #pragma omp atomic
                             numPulse[n][m]--;
@@ -406,78 +406,11 @@ void Network::IdealWU(double *learningRate)
         delete[] deltaConductance;
     }
 }
-
-bool Network::Test(double *input, int label)
+bool Network::Test(int label)
 {
-    int **tempOutput = new int *[layer];
-#pragma omp parallel for
-    for (int i = 0; i < layer; i++)
-    {
-        tempOutput[i] = new int[dimension[i]];
-    }
-
-#pragma omp parallel for
-    /* Digitalizing input vector */
-    for (int n = 0; n < dimension[0]; n++)
-    {
-        tempOutput[0][n] = static_cast<int>(input[n] * (pow(2, numBits) - 1));
-    }
-
-    /* Feedforward */
-    for (int l = 0; l < layer - 1; l++)
-    {
-        /* n = dimension[l] neurons to m = dimension[l + 1] neurons */
-
-        double **slicedBits = new double *[numBits];
-#pragma omp parallel for
-        for (int t = 0; t < numBits; t++)
-            slicedBits[t] = new double[dimension[l]];
-
-#pragma omp parallel for collapse(2)
-        /* Bit slicing */
-        for (int n = 0; n < dimension[l]; n++) // TODO: for negative output
-        {
-            for (int t = 0; t < numBits; t++)
-            {
-                if ((tempOutput[l][n] >> t) & 1)
-                    slicedBits[t][n] = readVoltage;
-                else
-                    slicedBits[t][n] = 0;
-            }
-        }
-
-        /* Read array */
-        double totalCurrent[dimension[l + 1]] = {};
-        for (int t = 0; t < numBits; t++)
-        {
-            double sumI[dimension[l + 1]] = {};
-            double sumRefI = array[l]->ReferenceColumn(slicedBits[t]); // Reference column current
-            array[l]->ReadArray(slicedBits[t], sumI);
-#pragma omp parallel for
-            for (int m = 0; m < dimension[l + 1]; m++)
-            {
-                totalCurrent[m] += (sumI[m] - sumRefI) / pow(2, numBits - t - 1); // Subtract reference column current (medium conductance) to make negative weight}
-            }
-        }
-
-#pragma omp parallel for
-        /* Activate */
-        for (int m = 0; m < dimension[l + 1]; m++)
-            tempOutput[l + 1][m] = activation->Activate(totalCurrent[m] * ItoV);
-
-        /* Delete memory Allocation*/
-        for (int t = 0; t < numBits; t++)
-            delete[] slicedBits[t];
-        delete[] slicedBits;
-    }
-    /* Delete memory Allocation */
-    for (int i = 0; i < layer; i++)
-        delete[] tempOutput[i];
-    delete[] tempOutput;
-
     for (int i = 0; i < dimension[layer - 1]; i++)
     {
-        if (tempOutput[layer - 1][i] >= tempOutput[layer - 1][label] && i != label)
+        if (output[layer - 1][i] >= output[layer - 1][label] && i != label)
             return false;
     }
     return true;

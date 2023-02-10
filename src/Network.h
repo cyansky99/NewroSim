@@ -22,7 +22,7 @@ public:
     void BP(int label);
     void WeightUpdate(double *learningRate, int streamLength, int numLevelLTP, int numLevelLTD);
     void IdealWU(double *learningRate);
-    bool Test(double *input, int label);
+    bool Test(int label);
     void SnapShot(int i); // TODO: delete after debugging
     ~Network();
 };

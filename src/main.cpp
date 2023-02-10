@@ -79,7 +79,7 @@ int main()
         printf("Train Start\n");
         for (int i = 0; i < 10000; i++)
         {
-            if (i % 1000 == 0)
+            if (i % 1000 == 999)
                 std::cout << "#" << std::flush;
             num = dis(gen);
             network.FF(data.GetTrainX()[num]);
@@ -91,14 +91,13 @@ int main()
         network.SnapShot(1);
         printf("Test Start\n");
         int cnt = 0;
-#pragma omp parallel for
-        for (int j = 0; j < 10000; j++)
+        for (int j = 0; j < 1000; j++)
         {
-            if (network.Test(data.GetTestX()[j], data.GetTestY()[j]))
-#pragma omp atomic
+            network.FF(data.GetTestX()[j]);
+            if (network.Test(data.GetTestY()[j]))
                 cnt++;
         }
-        std::cout << static_cast<double>(cnt) / 100 << " %" << std::endl;
+        std::cout << static_cast<double>(cnt) / 10 << " %" << std::endl;
     }
     return 0;
 };
