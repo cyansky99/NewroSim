@@ -8,6 +8,7 @@
 #include "Transistor.h"
 #include "Network.h"
 #include "ADCSigmoid.h"
+#include "IdealSigmoid.h"
 #include <cmath>
 
 std::random_device rd;
@@ -16,7 +17,7 @@ std::mt19937 gen(rd());
 int main()
 {
 
-    ModeledMaterial AgSi(3.0769e-9, 3.8462e-8, 97, 100, 2.4, -4.88, 0.0); // 97, 100, 2.4, -4.88
+    ModeledMaterial AgSi(3.0769e-9, 3.8462e-8, 97, 100, 0.01, -0.01, 0.0); // 97, 100, 2.4, -4.88
     // Wire wire(100, 2, 2.3, 2.73e-8);
     Wire wire(100, 2, 2.3, 0);
     // Transistor transistor(15e3);
@@ -58,22 +59,23 @@ int main()
     Data data(60000, 10000, 784);
     data.ReadData();
 
-    Array array1(784, 128, &wire, &AgSi, &transistor, 0.0);
-    Array array2(128, 10, &wire, &AgSi, &transistor, 0.0);
+    Array array1(784, 100, &wire, &AgSi, &transistor, 0.0);
+    Array array2(100, 10, &wire, &AgSi, &transistor, 0.0);
 
     Array *a[2] = {&array1, &array2};
 
     ADCSigmoid activation(4, 4);
+    IdealSigmoid idealActivation(8);
 
-    Network network(3, a, &activation, 1e7, 0.5, 1024);
+    Network network(3, a, &activation, 1e7, 0.5, 256);
 
-    double learningRate[2] = {0.1, 0.1};
+    double learningRate[2] = {0.4, 0.2};
     // 0.63, 0.11, 0.25
 
     std::uniform_int_distribution<int> dis(0, 59999);
 
     int num;
-    for (int epoch = 0; epoch < 10; epoch++)
+    for (int epoch = 0; epoch < 50; epoch++)
     {
         printf("Epoch %d\n", epoch + 1);
         printf("Train Start\n");
@@ -85,7 +87,8 @@ int main()
             network.FF(data.GetTrainX()[num]);
             network.BP(data.GetTrainY()[num]);
             // network.IdealWU(learningRate);
-            network.WeightUpdate(learningRate, 50, 97, 100);
+            // network.HardwareWU(learningRate);
+            network.WeightUpdate(learningRate, 10, 97, 100);
         }
         printf("\n");
         network.SnapShot(1);
@@ -98,6 +101,11 @@ int main()
                 cnt++;
         }
         std::cout << static_cast<double>(cnt) / 10 << " %" << std::endl;
+        if (epoch % 10 == 9)
+        {
+            for (int i = 0; i < 2; i++)
+                learningRate[i] /= 2;
+        }
     }
     return 0;
 };

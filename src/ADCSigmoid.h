@@ -13,7 +13,7 @@ private:
 public:
     ADCSigmoid(int MSBdigits, int LSBdigits);
     int Activate(double input) override;
-    double Derivative(int ouptut) override;
+    double Derivative(int output) override;
     double GetMaxDiff() override;
     bool CanBeNegative() override;
     ~ADCSigmoid();

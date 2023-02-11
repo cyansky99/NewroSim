@@ -22,6 +22,7 @@ public:
     void BP(int label);
     void WeightUpdate(double *learningRate, int streamLength, int numLevelLTP, int numLevelLTD);
     void IdealWU(double *learningRate);
+    void HardwareWU(double *learningRate); // TODO: delete after debugging
     bool Test(int label);
     void SnapShot(int i); // TODO: delete after debugging
     ~Network();

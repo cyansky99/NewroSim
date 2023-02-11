@@ -48,7 +48,7 @@ void Network::FF(double *input)
     /* Digitalizing input vector */
     for (int n = 0; n < dimension[0]; n++)
     {
-        output[0][n] = static_cast<int>(input[n] * (pow(2, numBits) - 1));
+        output[0][n] = static_cast<int>(input[n] * 255 / 256 * pow(2, numBits));
     }
 
     /* Feedforward */
@@ -406,6 +406,35 @@ void Network::IdealWU(double *learningRate)
         delete[] deltaConductance;
     }
 }
+
+void Network::HardwareWU(double *learningRate) // TODO: delete after debugging
+{
+    for (int l = 0; l < layer - 1; l++)
+    {
+        int **numPulse = new int *[dimension[l]]; // Number of coincident pusles
+#pragma omp parallel for
+        for (int n = 0; n < dimension[l]; n++)
+        {
+            numPulse[n] = new int[dimension[l + 1]]();
+        }
+
+#pragma omp parallel for collapse(2)
+        for (int n = 0; n < dimension[l]; n++)
+        {
+            for (int m = 0; m < dimension[l + 1]; m++)
+            {
+                numPulse[n][m] = static_cast<int>((-learningRate[l] * error[layer - l - 2][m] * output[l][n] / pow(2, numBits) / ItoV) / (3.8462e-8 - 3.0769e-9) * 100);
+            }
+        }
+
+        array[l]->WriteArray(numPulse);
+
+        for (int n = 0; n < dimension[l]; n++)
+            delete[] numPulse[n];
+        delete[] numPulse;
+    }
+}
+
 bool Network::Test(int label)
 {
     for (int i = 0; i < dimension[layer - 1]; i++)
