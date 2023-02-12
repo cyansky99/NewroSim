@@ -75,15 +75,14 @@ int main()
     // std::uniform_int_distribution<int> dis(0, NUMTRAINDATA -1);
     // int num;
 
+    std::vector<int> index(NUMTRAINDATA);
+    std::iota(index.begin(), index.end(), 0);
+
     for (int epoch = 0; epoch < EPOCH; epoch++)
     {
         printf("\n[ Epoch %d ]\n", epoch + 1);
         printf("Train Start\n");
-
-        std::vector<int> index(NUMTRAINDATA);
-        std::iota(index.begin(), index.end(), 0);
         std::shuffle(index.begin(), index.end(), gen);
-
         for (int i = 0; i < NUMTRAINDATA; i++)
         {
             if (i % 1000 == 999)
@@ -94,10 +93,10 @@ int main()
             // network.IdealWU(learningRate);
             // network.HardwareWU(learningRate, MAXCONDUCTANCE - MINCONDUCTANCE, NUMLEVELLTP, NUMLEVELLTD);
             network.StochasticPulseWU(learningRate, STREAMLENGTH, NUMLEVELLTP, NUMLEVELLTD);
+            // network.SnapShot(1);
         }
         printf("\n");
 
-        // network.SnapShot(1);
         printf("Test Start\n");
         int cnt = 0;
         for (int i = 0; i < NUMTESTDATA; i++)

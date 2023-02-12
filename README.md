@@ -14,5 +14,5 @@ $ ./main
 
 ## References
 
-Chen, P. Y., Peng, X., & Yu, S. (2018). NeuroSim: A circuit-level macro model for benchmarking neuro-inspired architectures in online learning. _IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems_, 37(12), 3067-3080.
-Deng, L. (2012). The mnist database of handwritten digit images for machine learning research. _IEEE Signal Processing Magazine, 29_(6), 141–142.
+1. Chen, P. Y., Peng, X., & Yu, S. (2018). NeuroSim: A circuit-level macro model for benchmarking neuro-inspired architectures in online learning. _IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems_, 37(12), 3067-3080.
+2. Deng, L. (2012). The mnist database of handwritten digit images for machine learning research. _IEEE Signal Processing Magazine, 29_(6), 141–142.
