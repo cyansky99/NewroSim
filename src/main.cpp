@@ -38,9 +38,9 @@ std::mt19937 gen(rd());
 #define INPUTSIZE 784
 #define OUTPUTSIZE 10
 /* Network */
-#define LAYER 3
+#define LAYER 4
 #define READVOLTAGE 0.5
-#define BPADCNUMLEVEL 256
+#define BPADCNUMLEVEL 4096
 #define MAXWEIGHT 1.0
 /* Train */
 #define EPOCH 100
@@ -60,17 +60,18 @@ int main()
     Data data(NUMTRAINDATA, NUMTESTDATA, INPUTSIZE);
     data.ReadData();
 
-    Array array1(INPUTSIZE, 512, &wire, &AgSi, &transistor, 0.0);
-    Array array2(512, OUTPUTSIZE, &wire, &AgSi, &transistor, 0.0);
+    Array inputArray(INPUTSIZE, 256, &wire, &AgSi, &transistor, 0.0);
+    Array hiddenArray(256, 128, &wire, &AgSi, &transistor, 0.0);
+    Array outputArray(128, OUTPUTSIZE, &wire, &AgSi, &transistor, 0.0);
 
-    Array *a[2] = {&array1, &array2};
+    Array *a[LAYER - 1] = {&inputArray, &hiddenArray, &outputArray};
 
-    ADCSigmoid activation(3, 3);
+    ADCSigmoid activation(6, 2);
 
     double ItoV = MAXWEIGHT / (MAXCONDUCTANCE - MINCONDUCTANCE) / (2 * READVOLTAGE);
     Network network(LAYER, a, &activation, ItoV, READVOLTAGE, BPADCNUMLEVEL);
 
-    double learningRate[2] = {0.4, 0.2};
+    double learningRate[LAYER - 1] = {0.1, 0.05, 0.01};
 
     // std::uniform_int_distribution<int> dis(0, NUMTRAINDATA -1);
     // int num;
@@ -82,6 +83,11 @@ int main()
     {
         printf("\n[ Epoch %d ]\n", epoch + 1);
         printf("Train Start\n");
+
+        for (int i = 0; i < NUMTRAINDATA / 1000; i++)
+            printf("-");
+        printf("\n");
+
         std::shuffle(index.begin(), index.end(), gen);
         for (int i = 0; i < NUMTRAINDATA; i++)
         {
@@ -93,10 +99,10 @@ int main()
             // network.IdealWU(learningRate);
             // network.HardwareWU(learningRate, MAXCONDUCTANCE - MINCONDUCTANCE, NUMLEVELLTP, NUMLEVELLTD);
             network.StochasticPulseWU(learningRate, STREAMLENGTH, NUMLEVELLTP, NUMLEVELLTD);
-            // network.SnapShot(1);
         }
         printf("\n");
 
+        // network.SnapShot(1);
         printf("Test Start\n");
         int cnt = 0;
         for (int i = 0; i < NUMTESTDATA; i++)

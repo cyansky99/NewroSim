@@ -10,7 +10,11 @@ IdealSigmoid::IdealSigmoid(int outputBits)
 int IdealSigmoid::Activate(double input)
 {
     double value = 1 / (1 + exp(-input));
-    return static_cast<int>(value * numInterval);
+    int intValue = static_cast<int>(value * numInterval);
+    if (value - intValue >= 0.5)
+        return intValue + 1;
+    else
+        return intValue;
 }
 
 double IdealSigmoid::Derivative(int output)

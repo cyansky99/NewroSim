@@ -28,7 +28,7 @@ int ADCSigmoid::Activate(double input)
     int MSB;
     int LSB;
     if (lookup[1] > input)
-        return numIntervalLSB / 2; // Return minimum
+        return 0; // Return minimum
     for (int i = 2; i < numIntervalMSB; i++)
     {
         if (lookup[i] > input)
@@ -38,7 +38,7 @@ int ADCSigmoid::Activate(double input)
             return MSB * numIntervalLSB + LSB;
         }
     }
-    return numIntervalLSB * (numIntervalMSB - 1) + numIntervalLSB / 2; // Return maximum
+    return numIntervalLSB * numIntervalMSB - 1; // Return maximum
 }
 
 double ADCSigmoid::Derivative(int output)
