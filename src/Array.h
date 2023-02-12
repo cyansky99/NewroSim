@@ -26,6 +26,6 @@ public:
     void WriteArray(int **numPulse);
     void IdealWriteArray(double **deltaConductance);
     double GetMaxWeight();
-    void PrintArray(double scale); // TODO: delete after debugging
+    void PrintArray(double scale);
     ~Array();
 };

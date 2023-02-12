@@ -149,7 +149,7 @@ Array::~Array()
     delete[] refRow;
 }
 
-void Array::PrintArray(double scale) // TODO: delete after debugging
+void Array::PrintArray(double scale)
 {
     for (int x = X - 1; x >= 0; x--)
     {

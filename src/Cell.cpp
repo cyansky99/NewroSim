@@ -44,7 +44,7 @@ double Cell::ReadCell(double voltage, double wireResistance, double readNoiseSig
         return current;
 };
 
-void Cell::PrintCell(double scale) // TODO: delete after debugging
+void Cell::PrintCell(double scale)
 {
     if (conductance > (material->MaxConductance() + material->MinConductance()) / 2)
         printf("+");

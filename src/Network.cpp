@@ -1,5 +1,5 @@
 #include "Network.h"
-#include <iostream> // XXX: delete after debugging
+#include <iostream>
 #include <cmath>
 #include <random>
 
@@ -201,7 +201,7 @@ void Network::BP(int label)
     }
 }
 
-void Network::WeightUpdate(double *learningRate, int streamLength, int numLevelLTP, int numLevelLTD)
+void Network::StochasticPulseWU(double *learningRate, int streamLength, int numLevelLTP, int numLevelLTD)
 {
     double maxWeight = array[0]->GetMaxWeight(); // XXX: Assume all arrays have same maximum weighit (same conductance range)
 
@@ -407,11 +407,11 @@ void Network::IdealWU(double *learningRate)
     }
 }
 
-void Network::HardwareWU(double *learningRate) // TODO: delete after debugging
+void Network::HardwareWU(double *learningRate, double conductanceRange, int numLevelLTP, int numLevelLTD)
 {
     for (int l = 0; l < layer - 1; l++)
     {
-        int **numPulse = new int *[dimension[l]]; // Number of coincident pusles
+        int **numPulse = new int *[dimension[l]];
 #pragma omp parallel for
         for (int n = 0; n < dimension[l]; n++)
         {
@@ -423,7 +423,8 @@ void Network::HardwareWU(double *learningRate) // TODO: delete after debugging
         {
             for (int m = 0; m < dimension[l + 1]; m++)
             {
-                numPulse[n][m] = static_cast<int>((-learningRate[l] * error[layer - l - 2][m] * output[l][n] / pow(2, numBits) / ItoV) / (3.8462e-8 - 3.0769e-9) * 100);
+                double deltaConductance = -learningRate[l] * error[layer - l - 2][m] * output[l][n] / pow(2, numBits) / ItoV;
+                numPulse[n][m] = (deltaConductance > 0) ? static_cast<int>(deltaConductance / conductanceRange * numLevelLTP) : static_cast<int>(deltaConductance / conductanceRange * numLevelLTD);
             }
         }
 
@@ -462,7 +463,7 @@ Network::~Network()
     delete[] error;
 }
 
-void Network::SnapShot(int i) // TODO: delete after debugging
+void Network::SnapShot(int i)
 {
     switch (i)
     {
@@ -481,7 +482,7 @@ void Network::SnapShot(int i) // TODO: delete after debugging
     }
     case 2:
     {
-        for (int l = layer - 2; l < layer - 1; l++)
+        for (int l = 0; l < layer - 1; l++)
         {
             printf("\n[ %d array weight ]\n\n", l + 1);
             array[l]->PrintArray(ItoV);

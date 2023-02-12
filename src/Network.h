@@ -20,10 +20,10 @@ public:
     Network(int layer, Array **array, Activation *activation, double ItoV, double readVoltage, int ADCsteps);
     void FF(double *input);
     void BP(int label);
-    void WeightUpdate(double *learningRate, int streamLength, int numLevelLTP, int numLevelLTD);
+    void StochasticPulseWU(double *learningRate, int streamLength, int numLevelLTP, int numLevelLTD);
     void IdealWU(double *learningRate);
-    void HardwareWU(double *learningRate); // TODO: delete after debugging
+    void HardwareWU(double *learningRate, double conductanceRange, int numLevelLTP, int numLevelLTD);
     bool Test(int label);
-    void SnapShot(int i); // TODO: delete after debugging
+    void SnapShot(int i);
     ~Network();
 };
