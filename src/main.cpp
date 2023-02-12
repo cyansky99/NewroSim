@@ -1,6 +1,9 @@
 #include <iostream>
-#include "Data.h"
+#include <cmath>
+#include <algorithm>
 #include <random>
+
+#include "Data.h"
 #include "ModeledMaterial.h"
 #include "Cell.h"
 #include "Array.h"
@@ -9,7 +12,6 @@
 #include "Network.h"
 #include "ADCSigmoid.h"
 #include "IdealSigmoid.h"
-#include <cmath>
 
 std::random_device rd;
 std::mt19937 gen(rd());
@@ -58,8 +60,8 @@ int main()
     Data data(NUMTRAINDATA, NUMTESTDATA, INPUTSIZE);
     data.ReadData();
 
-    Array array1(INPUTSIZE, 100, &wire, &AgSi, &transistor, 0.0);
-    Array array2(100, OUTPUTSIZE, &wire, &AgSi, &transistor, 0.0);
+    Array array1(INPUTSIZE, 512, &wire, &AgSi, &transistor, 0.0);
+    Array array2(512, OUTPUTSIZE, &wire, &AgSi, &transistor, 0.0);
 
     Array *a[2] = {&array1, &array2};
 
@@ -77,13 +79,18 @@ int main()
     {
         printf("\n[ Epoch %d ]\n", epoch + 1);
         printf("Train Start\n");
+
+        std::vector<int> index(NUMTRAINDATA);
+        std::iota(index.begin(), index.end(), 0);
+        std::shuffle(index.begin(), index.end(), gen);
+
         for (int i = 0; i < NUMTRAINDATA; i++)
         {
             if (i % 1000 == 999)
                 std::cout << "#" << std::flush;
             // num = dis(gen);
-            network.FF(data.GetTrainX()[i]);
-            network.BP(data.GetTrainY()[i]);
+            network.FF(data.GetTrainX()[index[i]]);
+            network.BP(data.GetTrainY()[index[i]]);
             // network.IdealWU(learningRate);
             // network.HardwareWU(learningRate, MAXCONDUCTANCE - MINCONDUCTANCE, NUMLEVELLTP, NUMLEVELLTD);
             network.StochasticPulseWU(learningRate, STREAMLENGTH, NUMLEVELLTP, NUMLEVELLTD);

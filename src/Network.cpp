@@ -313,55 +313,6 @@ void Network::StochasticPulseWU(double *learningRate, int streamLength, int numL
                 }
             }
         }
-        // if (l == layer - 2)
-        // {
-        //     for (int n = 0; n < dimension[l]; n++)
-        //     {
-        //         for (int m = 0; m < dimension[l + 1]; m++)
-        //         {
-        //             double deltaConductance = -learningRate[l] * error[layer - l - 2][m] * output[l][n] / pow(2, numBits) / ItoV;
-        //             double realNumPulse;
-        //             if (deltaConductance < 0)
-        //                 realNumPulse = deltaConductance * 100 / (3.8462e-8 - 3.0769e-9);
-        //             else
-        //                 realNumPulse = deltaConductance * 97 / (3.8462e-8 - 3.0769e-9);
-        //             printf("[%lf] ", realNumPulse);
-        //             printf("(%d) ", numPulse[n][m]);
-        //         }
-        //         printf("\n");
-        //     }
-        // }
-
-        // for (int n = 0; n < dimension[l]; n++)
-        // {
-        //     for (int m = 0; m < dimension[l + 1]; m++)
-        //     {
-        //         if (numPulse[n][m] > 0)
-        //         {
-        //             printf("%d pulse(s)\n", numPulse[n][m]);
-        //             printf("%lf : ", output[l][n] * CLTP / pow(2, numBits));
-        //             for (int t = 0; t < streamLength; t++)
-        //                 printf("%d", outputPulseStream[n][t]);
-        //             printf("\n");
-        //             printf("%lf : ", error[layer - l - 2][m] * CLTP);
-        //             for (int t = 0; t < streamLength; t++)
-        //                 printf("%d", errorPulseStream[m][t]);
-        //             printf("\n");
-        //         }
-        //         else if (numPulse[n][m] < 0)
-        //         {
-        //             printf("%d pulse(s)\n", numPulse[n][m]);
-        //             printf("%lf : ", output[l][n] * CLTD / pow(2, numBits));
-        //             for (int t = streamLength; t < streamLength * 2; t++)
-        //                 printf("%d", outputPulseStream[n][t]);
-        //             printf("\n");
-        //             printf("%lf : ", error[layer - l - 2][m] * CLTD);
-        //             for (int t = streamLength; t < streamLength * 2; t++)
-        //                 printf("%d", errorPulseStream[m][t]);
-        //             printf("\n");
-        //         }
-        //     }
-        // }
 
         /* Weight update with WriteArray */
         array[l]->WriteArray(numPulse);
