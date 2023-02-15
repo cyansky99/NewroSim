@@ -71,11 +71,8 @@ int main()
     double ItoV = MAXWEIGHT / (MAXCONDUCTANCE - MINCONDUCTANCE) / (2 * READVOLTAGE);
     Network network(LAYER, a, &activation, ItoV, READVOLTAGE, BPADCNUMLEVEL);
 
-    double learningRate[LAYER - 1] = {0.4, 0.001, 0.00007};
-    // 0.4, 0.001, 0.00007
-
-    // std::uniform_int_distribution<int> dis(0, NUMTRAINDATA -1);
-    // int num;
+    double learningRate[LAYER - 1] = {0.4, 0.0002, 0.00001};
+    // 0.4, 0.0002, 0.00001
 
     std::vector<int> index(NUMTRAINDATA);
     std::iota(index.begin(), index.end(), 0);
@@ -94,7 +91,6 @@ int main()
         {
             if (i % 1000 == 999)
                 std::cout << "#" << std::flush;
-            // num = dis(gen);
             network.FF(data.GetTrainX()[index[i]]);
             network.BP(data.GetTrainY()[index[i]]);
             // network.IdealWU(learningRate);
