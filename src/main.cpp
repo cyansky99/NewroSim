@@ -71,7 +71,8 @@ int main()
     double ItoV = MAXWEIGHT / (MAXCONDUCTANCE - MINCONDUCTANCE) / (2 * READVOLTAGE);
     Network network(LAYER, a, &activation, ItoV, READVOLTAGE, BPADCNUMLEVEL);
 
-    double learningRate[LAYER - 1] = {0.1, 0.05, 0.01};
+    double learningRate[LAYER - 1] = {0.4, 0.001, 0.0001};
+    // 0.5, 0.001, 0.001
 
     // std::uniform_int_distribution<int> dis(0, NUMTRAINDATA -1);
     // int num;
@@ -82,7 +83,7 @@ int main()
     for (int epoch = 0; epoch < EPOCH; epoch++)
     {
         printf("\n[ Epoch %d ]\n", epoch + 1);
-        printf("Train Start\n");
+        printf("> Train Start\n");
 
         for (int i = 0; i < NUMTRAINDATA / 1000; i++)
             printf("-");
@@ -102,16 +103,22 @@ int main()
         }
         printf("\n");
 
-        // network.SnapShot(1);
-        printf("Test Start\n");
+        network.SnapShot(1);
+        printf("> Test Start\n");
         int cnt = 0;
+        for (int i = 0; i < NUMTESTDATA / 1000; i++)
+            printf("-");
+        printf("\n");
         for (int i = 0; i < NUMTESTDATA; i++)
         {
+            if (i % 1000 == 999)
+                std::cout << "#" << std::flush;
             network.FF(data.GetTestX()[i]);
             if (network.Test(data.GetTestY()[i]))
                 cnt++;
         }
-        std::cout << "Accuracy " << static_cast<double>(cnt) / NUMTESTDATA * 100 << " %" << std::endl;
+        printf("\n");
+        std::cout << "> Accuracy " << static_cast<double>(cnt) / NUMTESTDATA * 100 << " %" << std::endl;
         if (epoch % LRDECCYCLE == LRDECCYCLE - 1)
         {
             for (int i = 0; i < LAYER - 1; i++)
