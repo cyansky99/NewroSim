@@ -71,8 +71,8 @@ int main()
     double ItoV = MAXWEIGHT / (MAXCONDUCTANCE - MINCONDUCTANCE) / (2 * READVOLTAGE);
     Network network(LAYER, a, &activation, ItoV, READVOLTAGE, BPADCNUMLEVEL);
 
-    double learningRate[LAYER - 1] = {0.4, 0.001, 0.0001};
-    // 0.5, 0.001, 0.001
+    double learningRate[LAYER - 1] = {0.4, 0.001, 0.00007};
+    // 0.4, 0.001, 0.00007
 
     // std::uniform_int_distribution<int> dis(0, NUMTRAINDATA -1);
     // int num;

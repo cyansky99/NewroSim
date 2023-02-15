@@ -1,4 +1,5 @@
 .vscode
-obj
+*.d
+*.o
 data
 main
