@@ -12,6 +12,7 @@
 #include "Network.h"
 #include "ADCSigmoid.h"
 #include "IdealSigmoid.h"
+#include "IdealTanh.h"
 
 std::random_device rd;
 std::mt19937 gen(rd());
@@ -71,8 +72,8 @@ int main()
     double ItoV = MAXWEIGHT / (MAXCONDUCTANCE - MINCONDUCTANCE) / (2 * READVOLTAGE);
     Network network(LAYER, a, &activation, ItoV, READVOLTAGE, BPADCNUMLEVEL);
 
-    double learningRate[LAYER - 1] = {0.4, 0.0002, 0.00001};
-    // 0.4, 0.0002, 0.00001
+    double learningRate[LAYER - 1] = {0.4, 0.0005, 0.00001};
+    // 0.4, 0.0005, 0.00001
 
     std::vector<int> index(NUMTRAINDATA);
     std::iota(index.begin(), index.end(), 0);
@@ -99,7 +100,7 @@ int main()
         }
         printf("\n");
 
-        network.SnapShot(1);
+        // network.SnapShot(1);
         printf("> Test Start\n");
         int cnt = 0;
         for (int i = 0; i < NUMTESTDATA / 1000; i++)

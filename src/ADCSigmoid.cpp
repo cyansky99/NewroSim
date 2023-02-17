@@ -57,6 +57,16 @@ bool ADCSigmoid::CanBeNegative()
     return false;
 }
 
+int ADCSigmoid::Maximum()
+{
+    return numIntervalLSB * numIntervalMSB - 1;
+}
+
+int ADCSigmoid::Minimum()
+{
+    return 0;
+}
+
 ADCSigmoid::~ADCSigmoid()
 {
     delete[] lookup;

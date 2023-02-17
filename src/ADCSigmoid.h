@@ -16,5 +16,7 @@ public:
     double Derivative(int output) override;
     double GetMaxDiff() override;
     bool CanBeNegative() override;
+    int Maximum() override;
+    int Minimum() override;
     ~ADCSigmoid();
 };

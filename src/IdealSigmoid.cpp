@@ -11,7 +11,7 @@ int IdealSigmoid::Activate(double input)
 {
     double value = 1 / (1 + exp(-input));
     int intValue = static_cast<int>(value * numInterval);
-    if (value - intValue >= 0.5)
+    if (value - intValue >= 0.5 && intValue < numInterval - 1)
         return intValue + 1;
     else
         return intValue;
@@ -31,4 +31,14 @@ double IdealSigmoid::GetMaxDiff()
 bool IdealSigmoid::CanBeNegative()
 {
     return false;
+}
+
+int IdealSigmoid::Maximum()
+{
+    return numInterval - 1;
+}
+
+int IdealSigmoid::Minimum()
+{
+    return 0;
 }

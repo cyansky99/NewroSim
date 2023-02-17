@@ -63,12 +63,12 @@ void Network::FF(double *input)
 
 #pragma omp parallel for collapse(2)
         /* Bit slicing */
-        for (int n = 0; n < dimension[l]; n++) // TODO: for negative output
+        for (int n = 0; n < dimension[l]; n++)
         {
             for (int t = 0; t < numBits; t++)
             {
-                if ((output[l][n] >> t) & 1)
-                    slicedBits[t][n] = readVoltage;
+                if ((abs(output[l][n]) >> t) & 1)
+                    slicedBits[t][n] = (output[l][n] >= 0) ? readVoltage : -readVoltage;
                 else
                     slicedBits[t][n] = 0;
             }
@@ -109,9 +109,9 @@ void Network::BP(int label)
 #pragma omp parallel for
         for (int m = 0; m < dimension[layer - 1]; m++)
         {
-            delta[m] = output[layer - 1][m];
+            delta[m] = output[layer - 1][m] - activation->Minimum();
         }
-        delta[label] = output[layer - 1][label] - (pow(2, numBits) - 1);
+        delta[label] = output[layer - 1][label] - activation->Maximum();
 
 #pragma omp parallel for
         /* Hadamard product with differential coefficient vector */

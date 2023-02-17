@@ -1,13 +1,13 @@
 #pragma once
 #include "Activation.h"
 
-class IdealSigmoid : public Activation
+class IdealTanh : public Activation
 {
 private:
     double numInterval; // Number of intervals
 
 public:
-    IdealSigmoid(int outputBits);
+    IdealTanh(int outputBits);
     int Activate(double input) override;
     double Derivative(int output) override;
     double GetMaxDiff() override;
