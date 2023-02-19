@@ -39,16 +39,37 @@ Network::Network(int layer, Array **array, Activation *activation, double ItoV, 
     {
         error[i] = new double[dimension[layer - i - 1]];
     }
+
+    errorRange = new double[layer - 1];
+    /* errorRange[l] : Size range of error at layer l + 1 */
+    double maxDiff = activation->GetMaxDiff();
+    double maxWeight = array[0]->GetMaxWeight(); // XXX: Assume all arrays have same maximum weighit (same conductance range)
+
+    errorRange[layer - 2] = (readVoltage * 2) * maxDiff;
+    for (int l = layer - 2; l > 0; l--)
+    {
+        errorRange[l - 1] = errorRange[l] * maxWeight * ItoV * dimension[l + 1] * maxDiff;
+    }
 }
 
 void Network::FF(double *input)
 {
-
-#pragma omp parallel for
     /* Digitalizing input vector */
-    for (int n = 0; n < dimension[0]; n++)
+    if (activation->CanBeNegative())
     {
-        output[0][n] = static_cast<int>(input[n] * 255 / 256 * pow(2, numBits));
+#pragma omp parallel for
+        for (int n = 0; n < dimension[0]; n++)
+        {
+            output[0][n] = static_cast<int>(input[n] * 255 / 256 * pow(2, numBits) - pow(2, numBits - 1));
+        }
+    }
+    else
+    {
+#pragma omp parallel for
+        for (int n = 0; n < dimension[0]; n++)
+        {
+            output[0][n] = static_cast<int>(input[n] * 255 / 256 * pow(2, numBits));
+        }
     }
 
     /* Feedforward */
@@ -221,8 +242,10 @@ void Network::StochasticPulseWU(double *learningRate, int streamLength, int numL
         }
 
         /* output/error to probability constant */
-        double CLTP = learningRate[l] * numLevelLTP / (streamLength * 2 * maxWeight * ItoV);
-        double CLTD = learningRate[l] * numLevelLTD / (streamLength * 2 * maxWeight * ItoV);
+        double CLTP = sqrt(learningRate[l] * numLevelLTP / (streamLength * 2 * maxWeight * ItoV));
+        double CLTD = sqrt(learningRate[l] * numLevelLTD / (streamLength * 2 * maxWeight * ItoV));
+        double balance = 1;
+        // double balance = 1 / errorRange[l];
 
         /* Generating probabilistic pulse stream of output */
         bool **outputPulseStream = new bool *[dimension[l]];
@@ -241,8 +264,8 @@ void Network::StochasticPulseWU(double *learningRate, int streamLength, int numL
         {
             outputPulseStream[n] = new bool[streamLength * 2]; // Generate pulse stream twice for positive/negative weight update
 
-            double pLTP = fabs(output[l][n] / pow(2, numBits)); // Pulse probability for LTP
-            double pLTD = fabs(output[l][n] / pow(2, numBits)); // Pulse probability for LTD
+            double pLTP = fabs(output[l][n] / pow(2, numBits) * CLTP / balance); // Pulse probability for LTP
+            double pLTD = fabs(output[l][n] / pow(2, numBits) * CLTD / balance); // Pulse probability for LTD
             // printf("%lf %lf \n", pLTP, pLTD);
             std::bernoulli_distribution disLTP(pLTP);
             std::bernoulli_distribution disLTD(pLTD);
@@ -272,8 +295,8 @@ void Network::StochasticPulseWU(double *learningRate, int streamLength, int numL
         {
             errorPulseStream[m] = new bool[streamLength * 2]; // Generate pulse stream twice for positive/negative weight update
 
-            double pLTP = fabs(error[layer - l - 2][m] * CLTP); // Pulse probability for LTP
-            double pLTD = fabs(error[layer - l - 2][m] * CLTD); // Pulse probability for LTD
+            double pLTP = fabs(error[layer - l - 2][m] * CLTP * balance); // Pulse probability for LTP
+            double pLTD = fabs(error[layer - l - 2][m] * CLTD * balance); // Pulse probability for LTD
             std::bernoulli_distribution disLTP(pLTP);
             std::bernoulli_distribution disLTD(pLTD);
             for (int t = 0; t < streamLength; t++) // First half is for LTP
@@ -328,6 +351,149 @@ void Network::StochasticPulseWU(double *learningRate, int streamLength, int numL
             delete[] errorPulseStream[m];
         delete[] errorPulseStream;
     }
+}
+
+unsigned long long int Network::StochasticPulseWU(double *learningRate, int streamLength, int numLevelLTP, int numLevelLTD, int n)
+{
+    double maxWeight = array[0]->GetMaxWeight(); // XXX: Assume all arrays have same maximum weighit (same conductance range)
+    unsigned long long int misPulseCnt = 0;
+
+    for (int l = 0; l < layer - 1; l++)
+    {
+        /* Update weights between layer l and layer l + 1 (array[l]) */
+        /* output[l][n] x error[layer - l - 2][m] */
+
+        /* Parallel weight update with coincidence of randomly generated pulses */
+
+        /* Memory allocation and initialization */
+        int **numPulse = new int *[dimension[l]]; // Number of coincident pusles
+#pragma omp parallel for
+        for (int n = 0; n < dimension[l]; n++)
+        {
+            numPulse[n] = new int[dimension[l + 1]]();
+        }
+
+        /* output/error to probability constant */
+        double CLTP = sqrt(learningRate[l] * numLevelLTP / (streamLength * 2 * maxWeight * ItoV));
+        double CLTD = sqrt(learningRate[l] * numLevelLTD / (streamLength * 2 * maxWeight * ItoV));
+        double balance = 1;
+        // double balance = 1 / errorRange[l];
+
+        /* Generating probabilistic pulse stream of output */
+        bool **outputPulseStream = new bool *[dimension[l]];
+        bool negativeOutput[dimension[l]] = {};
+        if (activation->CanBeNegative())
+        {
+#pragma omp parallel for
+            for (int n = 0; n < dimension[l]; n++)
+            {
+                if (output[l][n] < 0)
+                    negativeOutput[n] = 1;
+            }
+        }
+#pragma omp parallel for
+        for (int n = 0; n < dimension[l]; n++)
+        {
+            outputPulseStream[n] = new bool[streamLength * 2]; // Generate pulse stream twice for positive/negative weight update
+
+            double pLTP = fabs(output[l][n] / pow(2, numBits) * CLTP / balance); // Pulse probability for LTP
+            double pLTD = fabs(output[l][n] / pow(2, numBits) * CLTD / balance); // Pulse probability for LTD
+            // printf("%lf %lf \n", pLTP, pLTD);
+            std::bernoulli_distribution disLTP(pLTP);
+            std::bernoulli_distribution disLTD(pLTD);
+
+            for (int t = 0; t < streamLength; t++) // First half is for LTP
+            {
+                outputPulseStream[n][t] = disLTP(gen);
+            }
+
+            for (int t = streamLength; t < streamLength * 2; t++) // Second half is for LTD
+            {
+                outputPulseStream[n][t] = disLTD(gen);
+            }
+        }
+
+        /* Generating probabilistic pulse stream of error */
+        bool **errorPulseStream = new bool *[dimension[l + 1]];
+        bool negativeError[dimension[l + 1]] = {};
+#pragma omp parallel for
+        for (int m = 0; m < dimension[l + 1]; m++)
+        {
+            if (error[layer - l - 2][m] < 0)
+                negativeError[m] = 1;
+        }
+#pragma omp parallel for
+        for (int m = 0; m < dimension[l + 1]; m++)
+        {
+            errorPulseStream[m] = new bool[streamLength * 2]; // Generate pulse stream twice for positive/negative weight update
+
+            double pLTP = fabs(error[layer - l - 2][m] * CLTP * balance); // Pulse probability for LTP
+            double pLTD = fabs(error[layer - l - 2][m] * CLTD * balance); // Pulse probability for LTD
+            std::bernoulli_distribution disLTP(pLTP);
+            std::bernoulli_distribution disLTD(pLTD);
+            for (int t = 0; t < streamLength; t++) // First half is for LTP
+            {
+                errorPulseStream[m][t] = disLTP(gen);
+            }
+            for (int t = streamLength; t < streamLength * 2; t++) // Second half is for LTD
+            {
+                errorPulseStream[m][t] = disLTD(gen);
+            }
+        }
+
+#pragma omp parallel for collapse(3)
+        /* Count coincident pulses */
+        for (int t = 0; t < streamLength; t++)
+        {
+            for (int n = 0; n < dimension[l]; n++)
+            {
+                for (int m = 0; m < dimension[l + 1]; m++)
+                {
+                    if (negativeOutput[n] ^ negativeError[m]) // LTP (negative gradient, weight increase)
+                    {
+                        if (outputPulseStream[n][t] && errorPulseStream[m][t])
+                        {
+#pragma omp atomic
+                            numPulse[n][m]++;
+                        }
+                        if (outputPulseStream[n][t] ^ errorPulseStream[m][t])
+                        {
+#pragma omp atomic
+                            misPulseCnt++;
+                        }
+                    }
+                    else // LTD (positive gradient, weight decrease)
+                    {
+                        if (outputPulseStream[n][t + streamLength] && errorPulseStream[m][t + streamLength])
+                        {
+#pragma omp atomic
+                            numPulse[n][m]--;
+                        }
+                        if (outputPulseStream[n][t + streamLength] ^ errorPulseStream[m][t + streamLength])
+                        {
+#pragma omp atomic
+                            misPulseCnt++;
+                        }
+                    }
+                }
+            }
+        }
+
+        /* Weight update with WriteArray */
+        array[l]->WriteArray(numPulse);
+
+        /* Delete memory allocaion */
+        for (int n = 0; n < dimension[l]; n++)
+            delete[] numPulse[n];
+        delete[] numPulse;
+        for (int n = 0; n < dimension[l]; n++)
+            delete[] outputPulseStream[n];
+        delete[] outputPulseStream;
+        for (int m = 0; m < dimension[l + 1]; m++)
+            delete[] errorPulseStream[m];
+        delete[] errorPulseStream;
+    }
+    return misPulseCnt;
 }
 
 void Network::IdealWU(double *learningRate)
@@ -412,6 +578,8 @@ Network::~Network()
         delete[] error[i];
     }
     delete[] error;
+
+    delete[] errorRange;
 }
 
 void Network::SnapShot(int i)

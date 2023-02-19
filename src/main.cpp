@@ -48,7 +48,7 @@ std::mt19937 gen(rd());
 #define LRDEC 2.0
 #define LRDECCYCLE 10
 /* Stochastic pulse weight update */
-#define STREAMLENGTH 10
+#define STREAMLENGTH 20
 
 int main()
 {
@@ -68,18 +68,22 @@ int main()
     Array *a[LAYER - 1] = {&inputArray, &hiddenArray, &outputArray};
 
     ADCSigmoid activation(6, 2);
+    IdealTanh tanh(8);
 
     double ItoV = MAXWEIGHT / (MAXCONDUCTANCE - MINCONDUCTANCE) / (2 * READVOLTAGE);
     Network network(LAYER, a, &activation, ItoV, READVOLTAGE, BPADCNUMLEVEL);
 
     double learningRate[LAYER - 1] = {0.4, 0.0005, 0.00001};
-    // 0.4, 0.0005, 0.00001
+    // Sigmoid) 0.4, 0.0005, 0.00001
 
     std::vector<int> index(NUMTRAINDATA);
     std::iota(index.begin(), index.end(), 0);
 
     for (int epoch = 0; epoch < EPOCH; epoch++)
     {
+        /* For mismatched pulse count */
+        unsigned long long misPulseCnt = 0;
+
         printf("\n[ Epoch %d ]\n", epoch + 1);
         printf("> Train Start\n");
 
@@ -96,7 +100,8 @@ int main()
             network.BP(data.GetTrainY()[index[i]]);
             // network.IdealWU(learningRate);
             // network.HardwareWU(learningRate, MAXCONDUCTANCE - MINCONDUCTANCE, NUMLEVELLTP, NUMLEVELLTD);
-            network.StochasticPulseWU(learningRate, STREAMLENGTH, NUMLEVELLTP, NUMLEVELLTD);
+            misPulseCnt += network.StochasticPulseWU(learningRate, STREAMLENGTH, NUMLEVELLTP, NUMLEVELLTD, 0);
+            // network.StochasticPulseWU(learningRate, STREAMLENGTH, NUMLEVELLTP, NUMLEVELLTD);
         }
         printf("\n");
 
@@ -116,6 +121,7 @@ int main()
         }
         printf("\n");
         std::cout << "> Accuracy " << static_cast<double>(cnt) / NUMTESTDATA * 100 << " %" << std::endl;
+        std::cout << "> Mismatched Pulses " << misPulseCnt << std::endl;
         if (epoch % LRDECCYCLE == LRDECCYCLE - 1)
         {
             for (int i = 0; i < LAYER - 1; i++)
