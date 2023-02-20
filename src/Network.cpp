@@ -242,10 +242,10 @@ void Network::StochasticPulseWU(double *learningRate, int streamLength, int numL
         }
 
         /* output/error to probability constant */
-        double CLTP = sqrt(learningRate[l] * numLevelLTP / (streamLength * 2 * maxWeight * ItoV));
-        double CLTD = sqrt(learningRate[l] * numLevelLTD / (streamLength * 2 * maxWeight * ItoV));
-        double balance = 1;
-        // double balance = 1 / errorRange[l];
+        double CLTP = learningRate[l] * numLevelLTP / (streamLength * 2 * maxWeight * ItoV);
+        double CLTD = learningRate[l] * numLevelLTD / (streamLength * 2 * maxWeight * ItoV);
+        // double balance = 1;
+        // double balance = 2 / errorRange[l];
 
         /* Generating probabilistic pulse stream of output */
         bool **outputPulseStream = new bool *[dimension[l]];
@@ -264,8 +264,8 @@ void Network::StochasticPulseWU(double *learningRate, int streamLength, int numL
         {
             outputPulseStream[n] = new bool[streamLength * 2]; // Generate pulse stream twice for positive/negative weight update
 
-            double pLTP = fabs(output[l][n] / pow(2, numBits) * CLTP / balance); // Pulse probability for LTP
-            double pLTD = fabs(output[l][n] / pow(2, numBits) * CLTD / balance); // Pulse probability for LTD
+            double pLTP = fabs(output[l][n] / pow(2, numBits)); // Pulse probability for LTP
+            double pLTD = fabs(output[l][n] / pow(2, numBits)); // Pulse probability for LTD
             // printf("%lf %lf \n", pLTP, pLTD);
             std::bernoulli_distribution disLTP(pLTP);
             std::bernoulli_distribution disLTD(pLTD);
@@ -295,8 +295,8 @@ void Network::StochasticPulseWU(double *learningRate, int streamLength, int numL
         {
             errorPulseStream[m] = new bool[streamLength * 2]; // Generate pulse stream twice for positive/negative weight update
 
-            double pLTP = fabs(error[layer - l - 2][m] * CLTP * balance); // Pulse probability for LTP
-            double pLTD = fabs(error[layer - l - 2][m] * CLTD * balance); // Pulse probability for LTD
+            double pLTP = fabs(error[layer - l - 2][m] * CLTP); // Pulse probability for LTP
+            double pLTD = fabs(error[layer - l - 2][m] * CLTD); // Pulse probability for LTD
             std::bernoulli_distribution disLTP(pLTP);
             std::bernoulli_distribution disLTD(pLTD);
             for (int t = 0; t < streamLength; t++) // First half is for LTP
