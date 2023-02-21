@@ -42,7 +42,7 @@ std::mt19937 gen(rd());
 #define LAYER 4
 #define READVOLTAGE 0.5
 #define BPADCNUMLEVEL 4096
-#define MAXWEIGHT 1.0
+#define MAXWEIGHT 0.5
 /* Train */
 #define EPOCH 100
 #define LRDEC 2.0
@@ -70,7 +70,7 @@ int main()
     ADCSigmoid activation(6, 2);
     IdealTanh tanh(8);
 
-    double ItoV = MAXWEIGHT / (MAXCONDUCTANCE - MINCONDUCTANCE) / (2 * READVOLTAGE);
+    double ItoV = MAXWEIGHT / ((MAXCONDUCTANCE - MINCONDUCTANCE) / 2) / (2 * READVOLTAGE);
     Network network(LAYER, a, &activation, ItoV, READVOLTAGE, BPADCNUMLEVEL);
 
     double learningRate[LAYER - 1] = {0.4, 0.0005, 0.00001};
@@ -100,8 +100,8 @@ int main()
             network.BP(data.GetTrainY()[index[i]]);
             // network.IdealWU(learningRate);
             // network.HardwareWU(learningRate, MAXCONDUCTANCE - MINCONDUCTANCE, NUMLEVELLTP, NUMLEVELLTD);
-            misPulseCnt += network.StochasticPulseWU(learningRate, STREAMLENGTH, NUMLEVELLTP, NUMLEVELLTD, 0);
-            // network.StochasticPulseWU(learningRate, STREAMLENGTH, NUMLEVELLTP, NUMLEVELLTD);
+            // misPulseCnt += network.StochasticPulseWU(learningRate, STREAMLENGTH, NUMLEVELLTP, NUMLEVELLTD, 0);
+            network.StochasticPulseWU(learningRate, STREAMLENGTH, NUMLEVELLTP, NUMLEVELLTD);
         }
         printf("\n");
 
