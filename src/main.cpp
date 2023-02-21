@@ -121,7 +121,7 @@ int main()
         }
         printf("\n");
         std::cout << "> Accuracy " << static_cast<double>(cnt) / NUMTESTDATA * 100 << " %" << std::endl;
-        std::cout << "> Mismatched Pulses " << misPulseCnt << std::endl;
+        // std::cout << "> Mismatched Pulses " << misPulseCnt << std::endl;
         if (epoch % LRDECCYCLE == LRDECCYCLE - 1)
         {
             for (int i = 0; i < LAYER - 1; i++)
